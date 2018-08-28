@@ -53,3 +53,9 @@ Notes
 
 I followed roughly
 [this post](https://mozilla.github.io/firefox-browser-architecture/experiments/2017-09-06-rust-on-ios.html).
+
+There's currently
+[a bug](https://github.com/rust-lang/rust/issues/36156#issuecomment-330971277)
+in rustc that prevents building for iOS from anything but macOS.  This
+should be too much of an issue since we also need to use Xcode, which
+only works on macOS anyway.
