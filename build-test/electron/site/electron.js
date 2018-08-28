@@ -1,7 +1,5 @@
 /* tslint:disable */
-//import * as wasm from './electron_bg';
-
-const wasm = import('./electron_bg');
+import * as wasm from './electron_bg';
 
 const TextDecoder = typeof self === 'object' && self.TextDecoder
     ? self.TextDecoder
@@ -32,4 +30,3 @@ export function do_things_with_maths() {
     return wasm.do_things_with_maths();
 }
 
-do_things_with_maths();
