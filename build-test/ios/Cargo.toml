@@ -1,0 +1,12 @@
+[package]
+name = "ios"
+version = "0.1.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+publish = false
+
+[lib]
+name = "buildtest"
+crate-type = ["staticlib"]
+
+[dependencies]
+maths = { version = "0.1.0", path = "../maths", features = ["u64_backend"] }
