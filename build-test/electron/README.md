@@ -9,6 +9,16 @@ cryptographic Rust code for Electron clients.
  Usage
 -------
 
+Install `rustup` either via brew or via the rustup shell script:
+
+```sh
+brew install rustup-init
+curl https://sh.rustup.rs -sSf | sh
+```
+
+Install a nightly Rust compiler and Cargo (Rust's package manager),
+and add wasm32 as a build target platform:
+
 ```sh
 rustup install nightly
 rustup default nightly
