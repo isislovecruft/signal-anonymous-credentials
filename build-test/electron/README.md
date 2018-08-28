@@ -40,9 +40,10 @@ cargo install wasm-bindgen-cli
 wasm-bindgen electron.wasm --out-dir site
 ```
 
-That should create an `electron.js` module in the `site` directory
-which exports a Javascript FFI to the `do_things_with_maths` Rust
-function in the `maths` crate.
+That should create an `electron.js` module in the `site` directory which exports
+a Javascript FFI to the `do_things_with_maths()` Rust function in the `maths`
+crate, which will call the Javascript `alert()` function with the result of some
+cryptographic computations (it should display 32 random-ish looking bytes).
 
 
 Notes
