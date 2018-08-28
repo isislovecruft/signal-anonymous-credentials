@@ -23,17 +23,21 @@ and add wasm32 as a build target platform:
 rustup install nightly
 rustup default nightly
 rustup target add wasm32-unknown-unknown --toolchain nightly
-cargo +nightly build --target wasm32-unknown-unknown
+cargo +nightly build --target wasm32-unknown-unknown --release
 ```
 
-This gives us a wasm file at `target/wasm32-unknown-unknown/debug/electron.wasm`.
+This gives us a wasm file at `target/wasm32-unknown-unknown/release/electron.wasm`:
+
+```sh
+cp target/wasm32-unknown-unknown/release/electron.wasm ./
+```
 
 Now run the `wasm-bindgen` tool on it to generate a new wasm file and
 a set of Javascript bindings:
 
 ```sh
 cargo install wasm-bindgen-cli
-wasm-bindgen target/wasm32-unknown-unknown/debug/electron.wasm --out-dir site
+wasm-bindgen electron.wasm --out-dir site
 ```
 
 That should create an `electron.js` module in the `site` directory
