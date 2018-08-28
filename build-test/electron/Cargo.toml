@@ -2,6 +2,7 @@
 name = "electron"
 version = "0.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+publish = false
 
 [lib]
 crate-type = ["cdylib"]
