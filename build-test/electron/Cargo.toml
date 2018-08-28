@@ -1,0 +1,11 @@
+[package]
+name = "electron"
+version = "0.1.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+maths = { version = "0.1.0", path = "../maths", features = ["u32_backend"] }
+wasm-bindgen = { version = "0.2" }
