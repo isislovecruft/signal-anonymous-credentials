@@ -1,0 +1,24 @@
+[package]
+name = "maths"
+version = "0.1.0"
+authors = ["isis lovecruft <isis@patternsinthevoid.net>"]
+readme = "README.md"
+license = "BSD-3-Clause"
+repository = "https://github.com/signalapp/groupzk"
+categories = ["no-std"]
+description = "A small function to test building cryptographic Rust code on various platforms"
+exclude = [
+    "**/.gitignore",
+    ".gitignore",
+    ".travis.yml",
+]
+
+[dependencies]
+curve25519-dalek = { version = "0.19", default-features = false }
+rand = { version = "0.5" }
+
+[features]
+default = [ ]
+u32_backend = [ "curve25519-dalek/u32_backend" ]
+u64_backend = [ "curve25519-dalek/u64_backend" ]
+avx2_backend = [ "curve25519-dalek/avx2_backend" ]
