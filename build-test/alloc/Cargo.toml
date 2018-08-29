@@ -1,0 +1,7 @@
+[package]
+name = "alloc"
+version = "0.1.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+publish = false
+
+[dependencies]

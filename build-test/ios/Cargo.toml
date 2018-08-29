@@ -10,3 +10,4 @@ crate-type = ["staticlib"]
 
 [dependencies]
 maths = { version = "0.1.0", path = "../maths", features = ["u64_backend"] }
+alloc = { version = "0.1.0", path = "../alloc" }
