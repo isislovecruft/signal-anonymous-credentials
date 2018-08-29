@@ -38,11 +38,19 @@ is infinitely harder.
 cargo install cargo-lipo
 ```
 
-Now build with lipo:
+Now build with lipo (the `DEVELOPER_DIR` setting is a
+[workaround for a known rustc issue](https://github.com/rust-lang/rust/issues/36156#issuecomment-373201676),
+and the `env` part is specific to fish so if using bash or sh leave
+the `env` part out):
 
 ```sh
-cargo lipo --release
+env DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer cargo lipo --release
 ```
+
+(The other workaround, which permanently changes Xcode's active developer
+directory, is `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+I'm not an iOS developer so maybe that's normal, but it seemed rude to permanently
+change a setting just to build some measly Rust code.)
 
 There should now be a universal iOS library at `target/universal/release/libbuildtest.a`.
 
