@@ -9,3 +9,6 @@ Cargo.lock
 *.bak
 
 *.s
+
+._*
+.DS_Store
