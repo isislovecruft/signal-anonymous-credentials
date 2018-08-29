@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:/Users/isis/code/signal/groupzk/build-test/ios/xcode/buildtest-bridging-header.h">
+   </FileRef>
+   <FileRef
+      location = "group:../ViewController.swift">
+   </FileRef>
+   <FileRef
+      location = "group:/Users/isis/code/signal/groupzk/build-test/ios/xcode/libbuildtest.a">
+   </FileRef>
+   <FileRef
+      location = "self:">
+   </FileRef>
+</Workspace>

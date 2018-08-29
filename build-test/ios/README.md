@@ -54,7 +54,18 @@ change a setting just to build some measly Rust code.)
 
 There should now be a universal iOS library at `target/universal/release/libbuildtest.a`.
 
+This can be linked into an existing Xcode project by navigating the project
+settings to `General > Linked Frameworks and Libraries` and clicking the `+`
+button.  You'll also need to link in the `libresolv.tbd` framework (search for
+it in the list of libraries/frameworks which appear after clicking the `+`).
 
+I did somewhat crazy things with raw pointers and allocators on the Rust side
+(cf. `allocate_buffer_for_bytes`) to be able to pass an actual pointer to Swift
+in a manner that Swift's garbage collector should be able to safely `free()` it
+later, but we should probably check for memory leaks to ensure it's actually
+getting freed (and hopefully not getting freed early and/or twice).
+
+See the `xcode` directory for an example iOS app which calls Rust from Swift code.
 
 Notes
 -----
