@@ -2,5 +2,37 @@
 name = "amacs"
 version = "0.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+readme = "README.md"
+license = "BSD-3-Clause"
+repository = "https://github.com/signalapp/groupzk"
+categories = ["no-std", "cryptography"]
+keywords = ["MAC", "zero-knowledge", "anonymous-credentials"]
+description = "A pure-Rust library for algebraic message authentication codes (aMACs)"
+exclude = [
+    "**/.gitignore",
+    ".gitignore",
+    ".travis.yml",
+]
+publish = false
+
+[lib]
+name = "amacs"
+crate-type = ["staticlib", "rlib", "cdylib"]
 
 [dependencies]
+clear_on_drop = { version = "0.2" }
+curve25519-dalek = { version = "0.19", default-features = false }
+failure = { version = "0.1", default-features = false }
+rand = { version = "0.5" }
+sha2 = { version = "0.7" }
+subtle = { version = "0.7" }
+
+[features]
+default = [ ]
+std = [ "curve25519-dalek/std", "rand/std" ]
+nightly = ["curve25519-dalek/nightly", "rand/nightly", "clear_on_drop/nightly"]
+alloc = [ ]
+asm = [ "sha2/asm" ]
+u32_backend = [ "curve25519-dalek/u32_backend" ]
+u64_backend = [ "curve25519-dalek/u64_backend" ]
+avx2_backend = [ "curve25519-dalek/avx2_backend" ]
