@@ -28,7 +28,7 @@ sha2 = { version = "0.7" }
 subtle = { version = "0.7" }
 
 [features]
-default = [ ]
+default = [ "alloc" ]
 std = [ "curve25519-dalek/std", "rand/std" ]
 nightly = ["curve25519-dalek/nightly", "rand/nightly", "clear_on_drop/nightly"]
 alloc = [ ]

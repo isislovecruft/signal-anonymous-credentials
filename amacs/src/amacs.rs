@@ -28,7 +28,7 @@
 //     and the issuer parameters?
 // XXX does Elligator2 work for trusted setup?
 
-#[cfg(not(feature = "std"))]
+#[cfg(any(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
 
 use clear_on_drop::clear::Clear;
