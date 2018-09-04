@@ -84,7 +84,7 @@ pub struct TaggedMessage {
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct IssuerParameters {
-    ys: Vec<RistrettoPoint>,
+    Xn: Vec<RistrettoPoint>,
 }
 
 /// A secret key for authenticating and verifying `TaggedMessage`s.
@@ -92,7 +92,7 @@ pub struct IssuerParameters {
 #[repr(C)]
 pub struct SecretKey {
     x0: Scalar,
-    xs: Vec<Scalar>,
+    xn: Vec<Scalar>,
 }
 
 /// Overwrite secret key material with null bytes when it goes out of scope.
@@ -100,7 +100,7 @@ impl Drop for SecretKey {
     fn drop(&mut self) {
         self.x0.clear();
 
-        for scalar in self.xs.iter_mut() {
+        for scalar in self.xn.iter_mut() {
             scalar.clear();
         }
     }
@@ -110,14 +110,14 @@ impl SecretKey {
     /// Create a new `SecretKey` for authenticating a message of `n` `Scalar`s.
     pub fn new(n: usize) -> SecretKey {
         let mut csprng = thread_rng();
-        let mut xs: Vec<Scalar> = Vec::with_capacity(n);
+        let mut xn: Vec<Scalar> = Vec::with_capacity(n);
         let x0: Scalar = Scalar::random(&mut csprng);
 
         for _ in 0..n {
-            xs.push(Scalar::random(&mut csprng));
+            xn.push(Scalar::random(&mut csprng));
         }
 
-        SecretKey{ x0, xs }
+        SecretKey{ x0, xn }
     }
 
     /// Compute public issuer parameters for use with anonymous credentials.
@@ -126,25 +126,25 @@ impl SecretKey {
     ///
     /// * `h`, a distinguished basepoint orthogonal to the `RISTRETTO_BASEPOINT_POINT`.
     pub fn get_issuer_parameters(&self, h: RistrettoPoint) -> IssuerParameters {
-        let mut ys: Vec<RistrettoPoint> = Vec::with_capacity(self.xs.len());
+        let mut Xn: Vec<RistrettoPoint> = Vec::with_capacity(self.xn.len());
 
-        for xi in self.xs.iter() {
-            ys.push(h * xi);
+        for xi in self.xn.iter() {
+            Xn.push(h * xi);
         }
 
-        IssuerParameters{ ys }
+        IssuerParameters{ Xn }
     }
 
     pub fn mac(&self, message: &Message) -> Result<TaggedMessage, MacError> {
-        if self.xs.len() != message.0.len() {
-            return Err(MacError::MessageLengthError{ length: self.xs.len() });
+        if self.xn.len() != message.0.len() {
+            return Err(MacError::MessageLengthError{ length: self.xn.len() });
         }
 
         let mut csprng = thread_rng();
         let nonce: RistrettoPoint = &Scalar::random(&mut csprng) * &RISTRETTO_BASEPOINT_TABLE;
         let mut exponent: Scalar = self.x0;
 
-        for (xi, mi) in self.xs.iter().zip(message.0.iter()) {
+        for (xi, mi) in self.xn.iter().zip(message.0.iter()) {
             exponent = (xi * mi) + exponent;
         }
         let mac = nonce * exponent;
@@ -168,7 +168,7 @@ impl SecretKey {
         };
         let mut exponent = self.x0;
 
-        for (xi, mi) in self.xs.iter().zip(mac.message.0.iter()) {
+        for (xi, mi) in self.xn.iter().zip(mac.message.0.iter()) {
             exponent = (xi * mi) + exponent;
         }
         check *= exponent;
