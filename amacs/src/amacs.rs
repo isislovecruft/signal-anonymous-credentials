@@ -93,7 +93,7 @@ pub struct SecretKey {
 /// Overwrite secret key material with null bytes when it goes out of scope.
 impl Drop for SecretKey {
     fn drop(&mut self) {
-        //self.x0.clear();
+        //self.x0.clear(); // XXX
 
         for scalar in self.xs.iter_mut() {
             scalar.clear();
