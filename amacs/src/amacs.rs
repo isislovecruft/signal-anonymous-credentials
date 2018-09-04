@@ -88,6 +88,12 @@ impl From<Scalar> for Message {
     }
 }
 
+impl From<Vec<Scalar>> for Message {
+    fn from(source: Vec<Scalar>) -> Message {
+        Message( source )
+    }
+}
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct TaggedMessage {
