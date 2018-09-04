@@ -136,8 +136,8 @@ impl SecretKey {
         }
 
         let mut csprng = thread_rng();
-        let nonce = &Scalar::random(&mut csprng) * &RISTRETTO_BASEPOINT_TABLE;
-        let mut exponent = self.x0;
+        let nonce: RistrettoPoint = &Scalar::random(&mut csprng) * &RISTRETTO_BASEPOINT_TABLE;
+        let mut exponent: Scalar = self.x0;
 
         for (xi, mi) in self.xs.iter().zip(message.0.iter()) {
             exponent = (xi * mi) + exponent;
