@@ -29,6 +29,8 @@
 // XXX does Elligator2 work for trusted setup?
 
 #[cfg(any(feature = "alloc", not(feature = "std")))]
+use alloc::string::String;
+#[cfg(any(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
 
 use clear_on_drop::clear::Clear;
@@ -56,10 +58,13 @@ pub struct Message(pub(crate) Vec<Scalar>);
 /// # Example
 ///
 /// ```
-/// let msg: Message = b"".from();
+/// use amacs::Message;
+///
+/// let string: String = String::from("this is a test");
+/// let msg: Message = string.into();
 /// ```
-impl<'a> From<&'a str> for Message {
-    fn from(source: &'a str) -> Message {
+impl From<String> for Message {
+    fn from(source: String) -> Message {
         let mut v = Vec::new();
 
         v.push(Scalar::hash_from_bytes::<Sha512>(source.as_bytes()));
