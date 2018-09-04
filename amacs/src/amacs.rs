@@ -47,7 +47,6 @@ use subtle::ConstantTimeEq;
 
 use errors::MacError;
 
-#[cfg(not(feature = "serde"))]
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Message(pub(crate) Vec<Scalar>);
@@ -62,7 +61,6 @@ impl<'a> From<&'a str> for Message {
     }
 }
 
-#[cfg(not(feature = "serde"))]
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct TaggedMessage {
