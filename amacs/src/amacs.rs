@@ -78,6 +78,16 @@ impl From<String> for Message {
     }
 }
 
+impl From<Scalar> for Message {
+    fn from(source: Scalar) -> Message {
+        let mut v = Vec::with_capacity(1);
+
+        v.push(source);
+
+        Message( v )
+    }
+}
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct TaggedMessage {
