@@ -17,6 +17,8 @@ extern crate curve25519_dalek;
 extern crate failure;
 extern crate rand;
 extern crate sha2;
+#[cfg(feature = "std")]
+extern crate std;
 extern crate subtle;
 
 mod amacs;

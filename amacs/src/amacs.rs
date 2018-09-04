@@ -28,10 +28,15 @@
 //     and the issuer parameters?
 // XXX does Elligator2 work for trusted setup?
 
-#[cfg(any(feature = "alloc", not(feature = "std")))]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::string::String;
-#[cfg(any(feature = "alloc", not(feature = "std")))]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
+
+#[cfg(feature = "std")]
+use std::string::String;
+#[cfg(feature = "std")]
+use std::vec::Vec;
 
 use clear_on_drop::clear::Clear;
 
