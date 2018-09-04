@@ -51,6 +51,13 @@ use errors::MacError;
 #[repr(C)]
 pub struct Message(pub(crate) Vec<Scalar>);
 
+/// Convert a static `&str` to a `Message`.
+///
+/// # Example
+///
+/// ```
+/// let msg: Message = b"".from();
+/// ```
 impl<'a> From<&'a str> for Message {
     fn from(source: &'a str) -> Message {
         let mut v = Vec::new();
