@@ -38,6 +38,12 @@ use std::string::String;
 #[cfg(feature = "std")]
 use std::vec::Vec;
 
+#[cfg(not(feature = "std"))]
+use core::ops::Index;
+
+#[cfg(feature = "std")]
+use std::ops::Index;
+
 use clear_on_drop::clear::Clear;
 
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_COMPRESSED;
@@ -91,6 +97,14 @@ impl From<Scalar> for Message {
 impl From<Vec<Scalar>> for Message {
     fn from(source: Vec<Scalar>) -> Message {
         Message( source )
+    }
+}
+
+impl Index<usize> for Message {
+    type Output = Scalar;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
     }
 }
 
