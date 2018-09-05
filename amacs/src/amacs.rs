@@ -23,11 +23,6 @@
 //! for the "issuer parameters" used for anonymous credentials.  It should be
 //! generated securely.
 
-// XXX think about how the h parameter should work for the AC use case
-//     is there a meaningful separation between the parameter 'h'
-//     and the issuer parameters?
-// XXX does Elligator2 work for trusted setup?
-
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::string::String;
 #[cfg(all(feature = "alloc", not(feature = "std")))]
