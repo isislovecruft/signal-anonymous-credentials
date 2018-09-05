@@ -109,10 +109,9 @@ impl Index<usize> for Message {
 
 #[derive(Clone, Debug)]
 #[repr(C)]
-pub struct TaggedMessage {
+pub struct Tag {
     nonce:   RistrettoPoint,
     mac:     RistrettoPoint,
-    message: Message,
 }
 
 #[derive(Clone, Debug)]
@@ -122,7 +121,7 @@ pub struct IssuerParameters {
     Xn: Vec<RistrettoPoint>,
 }
 
-/// A secret key for authenticating and verifying `TaggedMessage`s.
+/// A secret key for authenticating and verifying `Tag`s.
 #[derive(Clone, Debug, Default)]
 #[repr(C)]
 pub struct SecretKey {
@@ -171,7 +170,7 @@ impl SecretKey {
         IssuerParameters{ Xn }
     }
 
-    pub fn mac(&self, message: &Message) -> Result<TaggedMessage, MacError> {
+    pub fn mac(&self, message: &Message) -> Result<Tag, MacError> {
         if self.xn.len() != message.0.len() {
             return Err(MacError::MessageLengthError{ length: self.xn.len() });
         }
@@ -185,23 +184,23 @@ impl SecretKey {
         }
         let mac = nonce * exponent;
 
-        Ok(TaggedMessage { nonce: nonce, mac: mac, message: message.clone() })
+        Ok(Tag { nonce: nonce, mac: mac })
     }
 
-    pub fn verify(&self, mac: &TaggedMessage) -> Result<Message, MacError> {
+    pub fn verify(&self, mac: &Tag, message: &Message) -> Result<(), MacError> {
         if mac.nonce == RISTRETTO_BASEPOINT_POINT {
             return Err(MacError::AuthenticationError);
         }
         let mut exponent = self.x0;
 
-        for (xi, mi) in self.xn.iter().zip(mac.message.0.iter()) {
+        for (xi, mi) in self.xn.iter().zip(message.0.iter()) {
             exponent = (xi * mi) + exponent;
         }
         let check: RistrettoPoint = mac.nonce * exponent;
 
         match mac.mac.ct_eq(&check).into() {
             false => Err(MacError::AuthenticationError),
-            true => Ok(mac.message.clone()),
+            true => Ok(()),
         }
     }
 }
@@ -224,10 +223,9 @@ mod test {
         v2.extend_from_slice(&[s1, s3]);
         let m2 = Message(v2);
         let tagged_m1 = key.mac(&m1).unwrap();
-        let tagged_m2 = TaggedMessage{ nonce: tagged_m1.nonce,
-                                       mac:   tagged_m1.mac,
-                                       message: m2 };
-        assert!(key.verify(&tagged_m1).is_ok());
-        assert!(key.verify(&tagged_m2).is_err());
+        let tagged_m2 = Tag{ nonce: tagged_m1.nonce,
+                             mac:   tagged_m1.mac };
+        assert!(key.verify(&tagged_m1, &m1).is_ok());
+        assert!(key.verify(&tagged_m2, &m2).is_err());
     }
 }
