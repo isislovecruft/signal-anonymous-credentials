@@ -210,10 +210,9 @@ impl SecretKey {
         }
         check *= exponent;
 
-        match orig.ct_eq(&check).unwrap_u8() {
-            0 => Err(MacError::AuthenticationError),
-            1 => Ok(mac.message.clone()),
-            _ => unsafe { ::core::hint::unreachable_unchecked() },
+        match orig.ct_eq(&check).into() {
+            false => Err(MacError::AuthenticationError),
+            true => Ok(mac.message.clone()),
         }
     }
 }
