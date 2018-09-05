@@ -112,7 +112,7 @@ pub struct Tag {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IssuerParameters {
-    Xn: Vec<RistrettoPoint>,
+    pub Xn: Vec<RistrettoPoint>,
 }
 
 /// A secret key for authenticating and verifying `Tag`s.
