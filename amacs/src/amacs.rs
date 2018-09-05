@@ -154,7 +154,7 @@ impl SecretKey {
     ///
     /// * `h`, a distinguished basepoint orthogonal to the `RISTRETTO_BASEPOINT_POINT`.
     #[allow(non_snake_case)]
-    pub fn get_issuer_parameters(&self, h: RistrettoPoint) -> IssuerParameters {
+    pub fn get_issuer_parameters(&self, h: &RistrettoPoint) -> IssuerParameters {
         let mut Xn: Vec<RistrettoPoint> = Vec::with_capacity(self.xn.len());
 
         for xi in self.xn.iter() {
