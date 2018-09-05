@@ -119,8 +119,8 @@ pub struct IssuerParameters {
 #[derive(Clone, Debug, Default)]
 #[repr(C)]
 pub struct SecretKey {
-    x0: Scalar,
-    xn: Vec<Scalar>,
+    pub x0: Scalar,
+    pub xn: Vec<Scalar>,
 }
 
 /// Overwrite secret key material with null bytes when it goes out of scope.
