@@ -11,13 +11,12 @@
 //!
 //! The system parameters are:
 //! 
-//! - A group `G` of prime order `l` (in the paper, `p`);
+//! - A group `G` of prime order `p`;
 //! - A generator `g` of G;
 //! - A generator `h` of G so that `log_g(h)` is unknown;
 //!
 //! In our case, the generator is the Ristretto basepoint.  This fixes `G`, `g`,
-//! and `l`.  Note that we rename `p` to `l` so that we do not confuse the group
-//! order with `p=2^255 -19`.
+//! and `l`.
 //!
 //! The only parameter remaining is the second generator `h`, which is only used
 //! for the "issuer parameters" used for anonymous credentials.  It should be
