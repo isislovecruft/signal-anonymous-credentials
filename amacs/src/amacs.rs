@@ -46,10 +46,9 @@ use std::ops::Index;
 
 use clear_on_drop::clear::Clear;
 
-use curve25519_dalek::constants::RISTRETTO_BASEPOINT_COMPRESSED;
+use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 
 use rand::thread_rng;
@@ -111,8 +110,8 @@ impl Index<usize> for Message {
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct TaggedMessage {
-    nonce:   CompressedRistretto,
-    mac:     CompressedRistretto,
+    nonce:   RistrettoPoint,
+    mac:     RistrettoPoint,
     message: Message,
 }
 
@@ -186,31 +185,21 @@ impl SecretKey {
         }
         let mac = nonce * exponent;
 
-        Ok(TaggedMessage { nonce: nonce.compress(), mac: mac.compress(), message: message.clone() })
+        Ok(TaggedMessage { nonce: nonce, mac: mac, message: message.clone() })
     }
 
     pub fn verify(&self, mac: &TaggedMessage) -> Result<Message, MacError> {
-        if mac.nonce == RISTRETTO_BASEPOINT_COMPRESSED {
+        if mac.nonce == RISTRETTO_BASEPOINT_POINT {
             return Err(MacError::AuthenticationError);
         }
-
-        let mut check: RistrettoPoint = match mac.nonce.decompress() {
-            None    => return Err(MacError::AuthenticationError),
-            Some(x) => x,
-        };
-
-        let orig: RistrettoPoint = match mac.mac.decompress() {
-            None    => return Err(MacError::AuthenticationError),
-            Some(x) => x,
-        };
         let mut exponent = self.x0;
 
         for (xi, mi) in self.xn.iter().zip(mac.message.0.iter()) {
             exponent = (xi * mi) + exponent;
         }
-        check *= exponent;
+        let check: RistrettoPoint = mac.nonce * exponent;
 
-        match orig.ct_eq(&check).into() {
+        match mac.mac.ct_eq(&check).into() {
             false => Err(MacError::AuthenticationError),
             true => Ok(mac.message.clone()),
         }
