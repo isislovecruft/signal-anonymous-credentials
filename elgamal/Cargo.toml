@@ -1,0 +1,34 @@
+[package]
+name = "elgamal"
+version = "0.1.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+publish = false
+readme = "README.md"
+license = "BSD-3-Clause"
+repository = "https://github.com/signalapp/groupzk"
+categories = ["no-std", "cryptography"]
+keywords = ["encryption", "homomorphic", "elgamal"]
+description = "A pure-Rust library for elGamal encryption using the Ristretto group"
+exclude = [
+    "**/.gitignore",
+    ".gitignore",
+    ".travis.yml",
+]
+
+[lib]
+name = "elgamal"
+crate-type = ["staticlib", "rlib", "cdylib"]
+
+[dependencies]
+clear_on_drop = { version = "0.2.3" }
+curve25519-dalek = { version = "0.19", default-features = false }
+rand = { version = "0.5", default-features = false }
+
+[features]
+default = [ "alloc" ]
+std = [ "curve25519-dalek/std" ]
+nightly = [ "curve25519-dalek/nightly" ]
+alloc = [ "curve25519-dalek/alloc" ]
+u32_backend = [ "curve25519-dalek/u32_backend" ]
+u64_backend = [ "curve25519-dalek/u64_backend" ]
+avx2_backend = [ "curve25519-dalek/avx2_backend" ]
