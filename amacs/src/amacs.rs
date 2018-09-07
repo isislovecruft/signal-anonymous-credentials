@@ -108,7 +108,7 @@ pub struct Tag {
     pub mac:     RistrettoPoint,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IssuerParameters {

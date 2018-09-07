@@ -1,0 +1,47 @@
+[package]
+name = "signal-credential"
+version = "0.1.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+publish = false
+readme = "README.md"
+license = "BSD-3-Clause"
+repository = "https://github.com/signalapp/groupzk"
+categories = ["no-std", "cryptography"]
+keywords = ["zero-knowledge", "anonymous-credentials"]
+description = "A pure-Rust library for anonymous attribute-based credentials using algebraic message authentication codes (aMACs)"
+exclude = [
+    "**/.gitignore",
+    ".gitignore",
+    ".travis.yml",
+]
+
+[lib]
+name = "amacs"
+crate-type = ["staticlib", "rlib", "cdylib"]
+
+[dependencies]
+amacs = { version = "0.1.0", path = "../amacs", default-features = false }
+curve25519-dalek = { version = "0.19", default-features = false }
+elgamal = { version = "0.1.0", path = "../elgamal", default-features = false }
+failure = { version = "0.1", default-features = false }
+rand = { version = "0.5", default-features = false }
+# TODO The zkp crate currently requires both serde and serde_derive.
+serde = { version = "1" }
+serde_derive = { version = "1" }
+subtle = { version = "0.9" }
+zkp = { version = "0.4", git = "https://github.com/dalek-cryptography/zkp" }
+
+[replace]
+"curve25519-dalek:0.19.0" = { git = "https://github.com/isislovecruft/curve25519-dalek", branch = "fix/subtle-0.9.0" }
+"zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/signal-changes" }
+
+[features]
+default = [ "std", "u64_backend" ]
+# TODO The zkp crate currently requires std (for no seemingly good reason).
+std = [ "amacs/std", "curve25519-dalek/std", "elgamal/std" ]
+nightly = [ "amacs/nightly", "curve25519-dalek/nightly", "rand/nightly" ]
+alloc = [ "amacs/alloc", "curve25519-dalek/alloc" ]
+asm = [ "amacs/asm" ]
+u32_backend = [ "amacs/u32_backend", "curve25519-dalek/u32_backend", "elgamal/u32_backend" ]
+u64_backend = [ "amacs/u64_backend", "curve25519-dalek/u64_backend", "elgamal/u64_backend" ]
+avx2_backend = [ "amacs/avx2_backend", "curve25519-dalek/avx2_backend", "elgamal/avx2_backend" ]
