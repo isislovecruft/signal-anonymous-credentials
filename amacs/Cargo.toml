@@ -17,7 +17,7 @@ publish = false
 
 [lib]
 name = "amacs"
-crate-type = ["staticlib", "rlib", "cdylib"]
+# crate-type = ["staticlib", "rlib", "cdylib"]
 
 [dependencies]
 clear_on_drop = { version = "0.2" }
