@@ -33,10 +33,10 @@ use std::string::String;
 use std::vec::Vec;
 
 #[cfg(not(feature = "std"))]
-use core::ops::Index;
+use core::ops::{Index, Mul};
 
 #[cfg(feature = "std")]
-use std::ops::Index;
+use std::ops::{Index, Mul};
 
 use clear_on_drop::clear::Clear;
 
@@ -196,6 +196,49 @@ impl SecretKey {
             false => Err(MacError::AuthenticationError),
             true => Ok(()),
         }
+    }
+}
+
+/// A type for generating secret nonces for aMAC rerandomisation and then
+/// clearing them from memory.
+#[derive(Clone, Debug, Default)]
+pub struct Rerandomization(pub(crate) Scalar);
+
+impl<'a, 'b> Mul<&'a Rerandomization> for &'b Tag {
+    type Output = Tag;
+
+    fn mul(self, other: &'a Rerandomization) -> Tag {
+        Tag {
+            nonce: other.0 * self.nonce,
+            mac:   other.0 * self.mac,
+        }
+    }
+}
+
+impl<'a, 'b> Mul<&'b Tag> for &'a Rerandomization {
+    type Output = Tag;
+
+    fn mul(self, other: &'b Tag) -> Tag {
+        Tag {
+            nonce: self.0 * other.nonce,
+            mac:   self.0 * other.mac,
+        }
+    }
+}
+
+impl Rerandomization {
+    fn new() -> Rerandomization {
+        Rerandomization(Scalar::random(&mut thread_rng()))
+    }
+
+    fn apply_to_tag(&self, tag: &Tag) -> Tag {
+        tag * self
+    }
+}
+
+impl Drop for Rerandomization {
+    fn drop(&mut self) {
+        self.0.clear();
     }
 }
 
