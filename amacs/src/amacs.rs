@@ -55,7 +55,7 @@ use errors::MacError;
 
 #[derive(Clone, Debug)]
 #[repr(C)]
-pub struct Message(pub(crate) Vec<Scalar>);
+pub struct Message(pub Vec<Scalar>);
 
 /// Convert a static `&str` to a `Message`.
 ///
@@ -90,6 +90,12 @@ impl From<Scalar> for Message {
 impl From<Vec<Scalar>> for Message {
     fn from(source: Vec<Scalar>) -> Message {
         Message( source )
+    }
+}
+
+impl From<Message> for Vec<Scalar> {
+    fn from(source: Message) -> Vec<Scalar> {
+        source.0
     }
 }
 
