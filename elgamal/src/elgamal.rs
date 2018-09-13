@@ -41,30 +41,19 @@ pub struct Keypair {
 /// invertible, isomorphic mapping from messages as scalars to messages as group
 /// elements.  One such construction is given in "Elliptic Curve Cryptosystems"
 /// (1987) by Neal Koblitz.
+///
+/// Rather than dealing with mapping scalars to group elements, instead we
+/// require that the user save their plaintext while giving the encryption to
+/// the credential issuer.  Later, rather than decrypt and map back to the
+/// original scalar, they simply use the original plaintext.  For this reason,
+/// we are able to map scalars to group elements by simply multiplying them by
+/// the basepoint, which is obviously not invertible but works for the
+/// algebraic-MAC-based anonymous credential blind issuance use-case.
 pub struct Message(pub(crate) RistrettoPoint);
 
-/// ElGamal cryptosystems in the elliptic curve context require a canonical,
-/// invertible, isomorphic mapping from messages as scalars to messages as group
-/// elements.  Several such constructions are given in "Elliptic Curve
-/// Cryptosystems" (1987) by Neal Koblitz.
-///
-/// One construction is, given an arbitrary `\ell` and an `n` s.t. `n = 2n'` is
-/// even, and plaintexts as scalars mod `\ell^{n'}`, to encode the scalar as a
-/// polynomial `m = m_0 p + m_1 p + … + m_{n'-1} p^{n'-1}, 0 ≤ m_j < p`.  We
-/// then choose a convenient vector space basis of `GF(\ell^{n'})` over
-/// `GF(\ell)` as `b_0, …,b_{n'-1}` and set the affine point coordinates as
-///
-///    x(m) = m_0 b_0 + m_1 b_1 + … m_{n'-1} b_{n'-1}
-///    y(m) = sqrt(x^3 + ax + b)
-///
-/// Instead, to avoid the choice of efficient vector basis we assume an
-/// order-of-magnitude limitation on `m`, which allows us to increase the order
-/// of magnitude until a solution for `x` in the to the curve equation is found.
 impl<'a> From<&'a Scalar> for Message {
     fn from(source: &'a Scalar) -> Message {
-        let _bytes: [u8; 32] = source.to_bytes();
-
-        unimplemented!()
+        Message(source * &RISTRETTO_BASEPOINT_TABLE)
     }
 }
 
