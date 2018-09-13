@@ -233,11 +233,11 @@ impl<'a, 'b> Mul<&'b Tag> for &'a Rerandomization {
 }
 
 impl Rerandomization {
-    fn new() -> Rerandomization {
+    pub fn new() -> Rerandomization {
         Rerandomization(Scalar::random(&mut thread_rng()))
     }
 
-    fn apply_to_tag(&self, tag: &Tag) -> Tag {
+    pub fn apply_to_tag(&self, tag: &Tag) -> Tag {
         tag * self
     }
 }
