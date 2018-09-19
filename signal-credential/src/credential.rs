@@ -105,5 +105,4 @@ pub struct SignalCredential {
     pub mac: Tag,
     /// DOCDOC
     pub attributes: Vec<RevealedAttribute>,
-    // XXX Do we want version numbers on these things?? Probably, right?
 }
