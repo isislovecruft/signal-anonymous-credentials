@@ -24,3 +24,4 @@ mod amacs;
 mod errors;
 
 pub use amacs::*;
+pub use errors::*;
