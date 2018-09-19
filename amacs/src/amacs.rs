@@ -49,8 +49,6 @@ use rand::thread_rng;
 
 use sha2::Sha512;
 
-use subtle::ConstantTimeEq;
-
 use errors::MacError;
 
 #[derive(Clone, Debug)]
@@ -180,7 +178,7 @@ impl SecretKey {
         let mut exponent: Scalar = self.x0;
 
         for (xi, mi) in self.xn.iter().zip(message.0.iter()) {
-            exponent = (xi * mi) + exponent;
+            exponent += xi * mi;
         }
         let mac = nonce * exponent;
 
@@ -198,9 +196,10 @@ impl SecretKey {
         }
         let check: RistrettoPoint = mac.nonce * exponent;
 
-        match mac.mac.ct_eq(&check).into() {
-            false => Err(MacError::AuthenticationError),
-            true => Ok(()),
+        if mac.mac == check {
+            Ok(())
+        } else {
+            Err(MacError::AuthenticationError)
         }
     }
 }
