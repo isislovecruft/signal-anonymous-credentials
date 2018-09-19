@@ -105,7 +105,7 @@ impl Index<usize> for Message {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct Tag {
     pub nonce:   RistrettoPoint,
