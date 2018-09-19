@@ -46,7 +46,6 @@ use proofs::revealed_attributes;
 use proofs::roster_membership;
 use roster::GroupRosterKey;
 use roster::RosterEntry;
-use traits::CredentialUser;
 
 /// DOCDOC
 pub struct SignalUser {

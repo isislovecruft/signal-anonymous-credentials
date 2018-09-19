@@ -38,5 +38,4 @@ pub mod pedersen;
 pub mod phone_number;
 pub mod proofs;
 pub mod roster;
-pub mod traits;
 pub mod user;

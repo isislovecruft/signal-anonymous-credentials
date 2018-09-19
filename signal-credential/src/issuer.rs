@@ -43,7 +43,6 @@ use proofs::blind_issuance;
 use proofs::issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
-use traits::CredentialIssuer;
 
 pub struct SignalIssuer {
     pub system_parameters: SystemParameters,
