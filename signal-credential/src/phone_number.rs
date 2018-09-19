@@ -10,6 +10,8 @@
 #[cfg(any(feature = "alloc", not(feature = "std")))]
 use alloc::string::String;
 
+use std::ops::{Index};
+
 use amacs;
 
 use curve25519_dalek::ristretto::RistrettoPoint;
@@ -33,28 +35,18 @@ use errors::CredentialError;
 /// To disambiguate numbers which may have significant leading zeros in some
 /// countries and/or regions, we prefix the bytes of the scalar with
 /// `0x15`s. These `0x15`s are not part of the `number`.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
-pub struct PhoneNumber {
-    pub number: Scalar,
-    pub length: usize,
-}
+pub struct PhoneNumber(pub Scalar);
 
-/// Compare two `PhoneNumber`s to see if they are equal.
-///
-/// # Note
-///
-/// This function is contant-time since, in the context of encrypted attributes
-/// on an anonymous credential, the phone number is a secret.
-impl PartialEq for PhoneNumber {
-    fn eq(&self, other: &PhoneNumber) -> bool {
-        let mut result: Choice = self.number.ct_eq(&other.number);
-        
-        result ^= self.length.ct_eq(&other.length);
-        result.into()
+impl Index<usize> for PhoneNumber {
+    type Output = u8;
+
+    /// Index the bytes of this `PhoneNumber`.  Mutation is not permitted.
+    fn index(&self, _index: usize) -> &u8 {
+        &(self.0[_index])
     }
 }
-impl Eq for PhoneNumber {}
 
 impl PhoneNumber {
     /// Convert a `String` containing a canonicalised (as if it were to be
@@ -102,7 +94,7 @@ impl PhoneNumber {
     //     }
     // }
     pub fn try_from_string(source: &String) -> Result<Self, CredentialError> {
-        let bytes: &[u8] = &source.clone().into_bytes(); // XXX remove clone
+        let bytes: &[u8] = source.as_bytes();
         let length: usize = bytes.len();
 
         if length > 32 {
@@ -132,18 +124,35 @@ impl PhoneNumber {
                 _  => 15,
             };
         }
+        // Suffix some bogus digits as well and then finally add the length:
+        bits[length+2] = 15;
+        bits[length+3] = 15;
+        bits[length+4] = length as u8;
+
         let number: Scalar = Scalar::from_bytes_mod_order(bits);
 
-        Ok(PhoneNumber { number: number, length: length.into() })
+        Ok(PhoneNumber(number))
     }
 }
 
 impl From<PhoneNumber> for String {
     fn from(source: PhoneNumber) -> String {
-        let mut s: String = String::with_capacity(source.length);
+        let mut length: usize = 0;
 
-        for i in 2..source.length+2 {
-            match source.number[i] {
+        // Work backwards to find the length:
+        for i in (0..32).rev() {
+            if source.0[i] == 0 {
+                continue;
+            } else {
+                length = source[i] as usize;
+                break;
+            }
+        }
+
+        let mut s: String = String::with_capacity(length);
+
+        for i in 2..length+2 {
+            match source[i] {
                 0 => s.push_str("0"),
                 1 => s.push_str("1"),
                 2 => s.push_str("2"),
@@ -154,65 +163,48 @@ impl From<PhoneNumber> for String {
                 7 => s.push_str("7"),
                 8 => s.push_str("8"),
                 9 => s.push_str("9"),
-                _ => println!("Got weird digit in phone number {:?}", source.number[i]),
+                _ => println!("Got weird digit in phone number {:?}", source[i]),
             }
         }
+
         s
     }
 }
 
 impl From<PhoneNumber> for amacs::Message {
     fn from(source: PhoneNumber) -> amacs::Message {
-        let mut v = Vec::with_capacity(2);
-
-        v.push(source.number);
-        v.push(Scalar::from(source.length as u64));
-        // TODO Remove this cast when the `impl From<usize> for Scalar` patch
-        //      (PR #193) is merged into curve25519-dalek.
-
-        amacs::Message::from(v)
+        amacs::Message::from(source.0)
     }
 }
 
 impl PhoneNumber {
     pub fn encrypt(
-        &self, key: &elgamal::Keypair,
+        &self,
+        key: &elgamal::Keypair,
         number_nonce: &elgamal::Ephemeral,
-        length_nonce: &elgamal::Ephemeral,
     ) -> EncryptedPhoneNumber
     {
-        let number_as_point: elgamal::Message = (&self.number).into();
-        let length_as_point: elgamal::Message = (&Scalar::from(self.length as u64)).into();
-        // TODO remove cast when patch is merged
+        let message: elgamal::Message = (&self.0).into();
 
-        EncryptedPhoneNumber {
-            number: key.encrypt(&number_as_point, &number_nonce),
-            length: key.encrypt(&length_as_point, &length_nonce),
-        }
+        EncryptedPhoneNumber(key.encrypt(&message, &number_nonce))
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct EncryptedPhoneNumber {
-    pub number: elgamal::Encryption,
-    pub length: elgamal::Encryption,
-}
+pub struct EncryptedPhoneNumber(pub elgamal::Encryption);
 
 impl From<EncryptedPhoneNumber> for Vec<EncryptedAttribute> {
     fn from(source: EncryptedPhoneNumber) -> Vec<EncryptedAttribute> {
-        let mut v = Vec::with_capacity(2);
+        let mut v = Vec::with_capacity(1);
 
-        v.push(source.number);
-        v.push(source.length);
+        v.push(source.0);
+
         v
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CommittedPhoneNumber {
-    pub number: pedersen::Commitment,
-    pub length: pedersen::Commitment,
-}
+pub struct CommittedPhoneNumber(pub pedersen::Commitment);
 
 impl CommittedPhoneNumber {
     pub fn from_phone_number(
@@ -222,10 +214,9 @@ impl CommittedPhoneNumber {
         h: &RistrettoPoint,
     ) -> CommittedPhoneNumber
     {
-        let number = pedersen::Commitment::to(&(phone_number.number * h), nonce, &g);
-        let length = pedersen::Commitment::to(&(Scalar::from(phone_number.length as u64) * h), nonce, &g);
+        let number = pedersen::Commitment::to(&(phone_number.0 * h), nonce, &g);
 
-        CommittedPhoneNumber { number, length }
+        CommittedPhoneNumber(number)
     }
 
     pub fn open(
@@ -236,8 +227,7 @@ impl CommittedPhoneNumber {
         h: &RistrettoPoint,
     ) -> Result<(), ()>
     {
-        self.number.open(&(h * &phone_number.number), nonce, &g)?;
-        self.length.open(&(h * &Scalar::from(phone_number.length as u64)), nonce, &g)?;
+        self.0.open(&(&phone_number.0 * h), nonce, &g)?;
 
         Ok(())
     }

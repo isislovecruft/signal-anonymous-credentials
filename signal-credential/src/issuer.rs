@@ -83,15 +83,7 @@ impl SignalIssuer {
             Some(x) => *x,
             None => return Err(CredentialError::NoIssuerParameters),
         };
-        let X2: RistrettoPoint = match self.issuer_parameters.Xn.get(1) {
-            Some(x) => *x,
-            None => return Err(CredentialError::NoIssuerParameters),
-        };
         let x1: Scalar = match self.key.xn.get(0) {
-            Some(x) => *x,
-            None => return Err(CredentialError::NoIssuerKey),
-        };
-        let x2: Scalar = match self.key.xn.get(1) {
             Some(x) => *x,
             None => return Err(CredentialError::NoIssuerKey),
         };
@@ -105,14 +97,12 @@ impl SignalIssuer {
         // XXX put the attributes into the transcript first
 
         // Verify the zero-knowledge proof that the roster entry is a commitment to the phone number.
-        let roster_entry_commitment_number = request.roster_entry.committed_phone_number.number.clone();
-        let roster_entry_commitment_length = request.roster_entry.committed_phone_number.length.clone();
+        let roster_entry_commitment_number = request.roster_entry.committed_phone_number;
 
         let revealed_attributes_publics: revealed_attributes::Publics = revealed_attributes::Publics {
             g: &self.system_parameters.g,
             h: &self.system_parameters.h,
-            roster_entry_commitment_number: &roster_entry_commitment_number.into(),
-            roster_entry_commitment_length: &roster_entry_commitment_length.into(),
+            roster_entry_commitment_number: &roster_entry_commitment_number.0.into(),
         };
 
         if request.proof.verify(&mut request_transcript, revealed_attributes_publics).is_err() {
@@ -138,10 +128,8 @@ impl SignalIssuer {
         let secrets = issuance::Secrets {
             x0: &self.key.x0,
             x1: &x1,
-            x2: &x2,
             x0_tilde: &x0_tilde,
             m1x1: &(&attributes[0] * &x1),
-            m2x2: &(&attributes[1] * &x2),
         };
         let publics = issuance::Publics {
             P: &tag.nonce,
@@ -150,7 +138,6 @@ impl SignalIssuer {
             B: &self.system_parameters.g,
             A: &self.system_parameters.h,
             X1: &X1,
-            X2: &X2,
         };
         let proof: issuance::Proof = issuance::Proof::create(&mut issuance_transcript, publics, secrets);
 
@@ -184,13 +171,10 @@ impl SignalIssuer {
             B: &self.system_parameters.g,
             A: &self.system_parameters.h,
             X0: &self.issuer_parameters.Xn[0],
-            X1: &self.issuer_parameters.Xn[1],
             P: &P,
             V: &V_prime,
             Cm0: &presentation.hidden_attributes[0].clone().into(), // XXX remove clones
-            Cm1: &presentation.hidden_attributes[1].clone().into(),
-            RosterEntryPhoneNumberCommitment: &presentation.roster_entry.committed_phone_number.number.clone().into(),
-            RosterEntryLengthCommitment: &presentation.roster_entry.committed_phone_number.length.clone().into(),
+            RosterEntryPhoneNumberCommitment: &presentation.roster_entry.committed_phone_number.0.into(),
         };
 
         if presentation.proof.verify(&mut transcript, publics).is_err() {

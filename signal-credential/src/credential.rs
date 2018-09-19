@@ -27,7 +27,7 @@ use proofs::roster_membership;
 use roster::RosterEntry;
 
 /// The number of revealed attributes on a `SignalCredential` during issuance.
-pub const ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES: usize = 2;
+pub const ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES: usize = 1;
 
 /// The number of encrypted attributes on a `SignalCredential` during issuance.
 pub const ISSUANCE_NUMBER_OF_HIDDEN_ATTRIBUTES: usize = 0;
@@ -36,7 +36,7 @@ pub const ISSUANCE_NUMBER_OF_HIDDEN_ATTRIBUTES: usize = 0;
 pub const PRESENTATION_NUMBER_OF_REVEALED_ATTRIBUTES: usize = 0;
 
 /// The number of encrypted attributes on a `SignalCredential` during presentation.
-pub const PRESENTATION_NUMBER_OF_HIDDEN_ATTRIBUTES: usize = 2;
+pub const PRESENTATION_NUMBER_OF_HIDDEN_ATTRIBUTES: usize = 1;
 
 /// The total number of attributes on a `SignalCredentia`.
 pub const NUMBER_OF_ATTRIBUTES: usize =

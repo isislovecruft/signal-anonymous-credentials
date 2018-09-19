@@ -34,8 +34,7 @@ pub struct RosterEntry {
     /// The following are ciphertexts are required for other group members to
     /// open the above commitment, and they are encrypted symmetrically with an
     /// AES key, which in turn is encrypted to the shared group key.
-    pub encrypted_phone_number: [u8; 32],  // XXX What size/type are these ciphertexts?
-    pub encrypted_phone_length: [u8; 32],
+    pub encrypted_phone_number: [u8; 32],  // XXX What size/type is this ciphertexts?
     pub encrypted_commitment_opening: [u8; 32],
 }
 
@@ -48,14 +47,12 @@ impl RosterEntry {
     ) -> RosterEntry
     {
         // XXX Actually encrypt these with an AES key encrypted to the group key.
-        let encrypted_phone_number: [u8; 32] = phone_number.number.to_bytes();
-        let encrypted_phone_length: [u8; 32] = Scalar::from(phone_number.length as u64).to_bytes();
+        let encrypted_phone_number: [u8; 32] = phone_number.0.to_bytes();
         let encrypted_commitment_opening: [u8; 32] = nonce.to_bytes();
 
         RosterEntry {
             committed_phone_number: committed_phone_number.clone(),
             encrypted_phone_number: encrypted_phone_number,
-            encrypted_phone_length: encrypted_phone_length,
             encrypted_commitment_opening: encrypted_commitment_opening,
         }
     }

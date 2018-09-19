@@ -108,14 +108,12 @@ impl SignalUser {
         // Construct a proof that the roster entry is in fact a commitment to our phone_number.
         let secrets = revealed_attributes::Secrets {
             nonce: &opening,
-            phone_number: &number.number.into(),
-            phone_length: &Scalar::from(number.length as u64),
+            phone_number: &number.0,
         };
         let publics = revealed_attributes::Publics {
             g: &self.system_parameters.g,
             h: &self.system_parameters.h,
-            roster_entry_commitment_number: &roster_entry.committed_phone_number.number.into(),
-            roster_entry_commitment_length: &roster_entry.committed_phone_number.length.into(),
+            roster_entry_commitment_number: &roster_entry.committed_phone_number.0.into(),
         };
         let proof = revealed_attributes::Proof::create(&mut transcript, publics, secrets);
 
@@ -142,10 +140,6 @@ impl SignalUser {
             None => return Err(CredentialError::NoIssuerParameters),
             Some(x) => *x,
         };
-        let X2: RistrettoPoint = match self.issuer_parameters.Xn.get(1) {
-            None => return Err(CredentialError::NoIssuerParameters),
-            Some(x) => *x,
-        };
 
         let publics: issuance::Publics = issuance::Publics {
             P: &issue.credential.mac.nonce,
@@ -154,7 +148,6 @@ impl SignalUser {
             B: &self.system_parameters.g,
             A: &self.system_parameters.h,
             X1: &X1,
-            X2: &X2,
         };
 
         if issue.proof.verify(&mut transcript, publics).is_err() {

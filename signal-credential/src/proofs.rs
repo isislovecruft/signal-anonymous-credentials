@@ -41,13 +41,12 @@
 // the public point, so we multiply them before passing them into the
 // macro-generated code as an additional secret value (since it depend on x1).
 create_nipk!(_issuance,
-             (x0, x1, x2, x0_tilde, m1x1, m2x2),
-             (P, Q, Cx0, B, A, X1, X2)
+             (x0, x1, x0_tilde, m1x1),
+             (P, Q, Cx0, B, A, X1)
              :
-             Q = (P * x0 + P * m1x1 + P * m2x2),
+             Q = (P * x0 + P * m1x1),
              Cx0 = (B * x0 + A * x0_tilde),
-             X1 = (A * x1),
-             X2 = (A * x2)
+             X1 = (A * x1)
 );
 
 pub mod issuance {
@@ -85,16 +84,13 @@ pub mod issuance {
 //     does only implements the Chaum-Pedersen statements for honest provers
 //     only.
 create_nipk!(_blind_attributes,
-             (d, e0, m0, e1, m1, nonce),
+             (d, e0, m0, nonce),
              (B, A, D, roster_entry,
-              encrypted_attribute_0_0, encrypted_attribute_0_1,
-              encrypted_attribute_1_0, encrypted_attribute_1_1)
+              encrypted_attribute_0_0, encrypted_attribute_0_1)
              :
              D = (B * d),
              encrypted_attribute_0_0 = (B * e0),
              encrypted_attribute_0_1 = (B * m0 + D * e0),
-             encrypted_attribute_1_0 = (B * e1),
-             encrypted_attribute_1_1 = (B * m1 + D * e1),
              roster_entry = (A * m0 + B * nonce)
 );
 
@@ -111,20 +107,17 @@ pub mod blind_attributes {
 //     T0 = (X0 * b), T0 = (h * t0),
 //     T1 = (X1 * b), T1 = (h * t1),
 create_nipk!(_blind_issuance,
-             (x0_tilde, x0, x1, x2, s, b, t0, t1),
-             (B, A, X0, X1, X2, D, P, T0_0, T0_1, T1_0, T1_1,
+             (x0_tilde, x0, x1, s, b, t0),
+             (B, A, X0, X1, D, P, T0_0, T0_1,
               EQ_commitment, EQ_encryption,
-              encrypted_attribute_0_0, encrypted_attribute_0_1,
-              encrypted_attribute_1_0, encrypted_attribute_1_1)
+              encrypted_attribute_0_0, encrypted_attribute_0_1)
              :
              X0 = (B * x0 + A * x0_tilde),
              X1 = (A * x1),
-             X2 = (A * x2),
              P  = (B * b),
              T0_0 = (X0 * b), T0_1 = (A * t0), // XXX the zkp crate doesn't like this, hack around it
-             T1_0 = (X1 * b), T1_1 = (A * t1),
-             EQ_commitment = (B * s + encrypted_attribute_0_0 * t0 + encrypted_attribute_1_0 * t1),
-             EQ_encryption = (D * s + encrypted_attribute_0_1 * t0 + encrypted_attribute_1_1 * t1
+             EQ_commitment = (B * s + encrypted_attribute_0_0 * t0),
+             EQ_encryption = (D * s + encrypted_attribute_0_1 * t0
 // This part is only if there were revealed attributes:
 //                              + x0 * P + x1m1 * P + x2m2 * P
                               )
@@ -143,13 +136,10 @@ pub mod blind_issuance {
 //     When we pull the code out of the macros the phone_number and phone_length
 //     here should be publics.
 create_nipk!(_revealed_attributes,
-             (nonce, phone_number, phone_length),
-             (g, h,
-              roster_entry_commitment_number,
-              roster_entry_commitment_length)
+             (nonce, phone_number),
+             (g, h, roster_entry_commitment_number)
              :
-             roster_entry_commitment_number = (h * phone_number + g * nonce),
-             roster_entry_commitment_length = (h * phone_length + g * nonce)
+             roster_entry_commitment_number = (h * phone_number + g * nonce)
 );
 
 pub mod revealed_attributes {
@@ -159,17 +149,13 @@ pub mod revealed_attributes {
 }
 
 create_nipk!(_roster_membership,
-             (m0, m1, z0, z1, minus_zQ, nonce),
-             (B, A, X0, X1, P, V, Cm0, Cm1,
-              RosterEntryPhoneNumberCommitment,
-              RosterEntryLengthCommitment)
+             (m0, z0, minus_zQ, nonce),
+             (B, A, X0, P, V, Cm0, RosterEntryPhoneNumberCommitment)
              :
              Cm0 = (P * m0 + A * z0),
-             Cm1 = (P * m1 + A * z1),
-             V = (X0 * z0 + X1 * z1 + A * minus_zQ),
+             V = (X0 * z0 + A * minus_zQ),
              // ECDLEQ over the two entries to prove equivalence of committed values:
-             RosterEntryPhoneNumberCommitment = (A * m0 + B * nonce),
-             RosterEntryLengthCommitment = (A * m1 + B * nonce)
+             RosterEntryPhoneNumberCommitment = (A * m0 + B * nonce)
 );
 
 pub mod roster_membership {
