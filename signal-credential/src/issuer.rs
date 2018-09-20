@@ -230,13 +230,13 @@ mod test {
         let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request).unwrap();
 
         // Give the result back to Alice for processing
-        alice.obtain_finish(Some(alice_issuance));
+        alice.obtain_finish(Some(&alice_issuance));
         
         // And the same for Bob:
         let bob_request: SignalCredentialRequest = bob.obtain().unwrap();
         let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request).unwrap();
 
-        bob.obtain_finish(Some(bob_issuance));
+        bob.obtain_finish(Some(&bob_issuance));
 
         let alice_roster_entry: RosterEntry = alice.roster_entry.unwrap();
         let bob_roster_entry: RosterEntry = bob.roster_entry.unwrap();

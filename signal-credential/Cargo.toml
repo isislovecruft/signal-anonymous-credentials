@@ -14,10 +14,13 @@ exclude = [
     ".gitignore",
     ".travis.yml",
 ]
+autobenches = false
 
-[lib]
-name = "amacs"
-crate-type = ["staticlib", "rlib", "cdylib"]
+## XXX criterion can't find the signal-credential crate unless the following is commented out?
+#
+#[lib]
+#name = "credential"
+#crate-type = ["staticlib", "rlib", "cdylib"]
 
 [dependencies]
 amacs = { version = "0.1.0", path = "../amacs", default-features = false }
@@ -29,11 +32,18 @@ rand = { version = "0.5", default-features = false }
 serde = { version = "1" }
 serde_derive = { version = "1" }
 subtle = { version = "0.9" }
-zkp = { version = "0.4", git = "https://github.com/dalek-cryptography/zkp" }
+zkp = { version = "0.4" }
+
+[dev-dependencies]
+criterion = { version = "0.2" }
 
 [replace]
 "curve25519-dalek:0.19.0" = { git = "https://github.com/isislovecruft/curve25519-dalek", branch = "fix/subtle-0.9.0" }
 "zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/signal-changes" }
+
+[[bench]]
+name = "credential-benchmarks"
+harness = false
 
 [features]
 default = [ "std", "u64_backend" ]

@@ -126,12 +126,12 @@ impl SignalUser {
     /// DOCDOC
     pub fn obtain_finish(
         &mut self,
-        issuance: Option<SignalCredentialIssuance>,
+        issuance: Option<&SignalCredentialIssuance>,
     ) -> Result<(), CredentialError>
     {
         let mut transcript = Transcript::new(b"SIGNAL ISSUANCE");
 
-        let issue: SignalCredentialIssuance = match issuance {
+        let issue: &SignalCredentialIssuance = match issuance {
             Some(i) => i,
             None    => return Err(CredentialError::CredentialIssuance),
         };

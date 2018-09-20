@@ -39,3 +39,13 @@ pub mod phone_number;
 pub mod proofs;
 pub mod roster;
 pub mod user;
+
+pub use credential::*;
+pub use errors::*;
+pub use issuer::*;
+pub use parameters::*;
+pub use pedersen::*;
+pub use phone_number::*;
+pub use proofs::*;
+pub use roster::*;
+pub use user::*;
