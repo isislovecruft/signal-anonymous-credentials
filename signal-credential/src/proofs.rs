@@ -79,10 +79,6 @@ pub mod issuance {
 // TODO The hacky _0 and _1 notation is due to the elGamal ciphertexts being a
 // tuple and the macro in the zkp crate doesn't expect a tuple and can't deal
 // with it.
-//
-// XXX The above TODO *must* be fixed before deployment, as the current proof
-//     does only implements the Chaum-Pedersen statements for honest provers
-//     only.
 create_nipk!(_blind_attributes,
              (d, e0, m0, nonce),
              (B, A, D, roster_entry,
@@ -133,8 +129,8 @@ pub mod blind_issuance {
 //     phone_number * h, where phone_number is also public but the zkp crate
 //     won't let us multiply two publics (or let us have a public scalar).
 //
-//     When we pull the code out of the macros the phone_number and phone_length
-//     here should be publics.
+//     When we pull the code out of the macros the phone_number here
+//     should be a public.
 create_nipk!(_revealed_attributes,
              (nonce, phone_number),
              (g, h, roster_entry_commitment_number)

@@ -44,15 +44,26 @@ use proofs::issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
 
+/// An issuer and honest verifier of `SignalCredential`s.
 pub struct SignalIssuer {
-    pub system_parameters: SystemParameters,
-    /// The issuer's public key material.
-    pub issuer_parameters: IssuerParameters,
     /// The issuer's secret key material.
     key: IssuerSecretKey,
+    /// The issuer's public key material.
+    pub issuer_parameters: IssuerParameters,
+    /// The system parameters.  Users and issuers must agree on parameters.
+    pub system_parameters: SystemParameters,
 }
 
 impl SignalIssuer {
+    /// Create a new `SignalIssuer` from some agreed upon `system_parameters`
+    /// and an optional `secret_key`.
+    ///
+    /// # Inputs
+    ///
+    /// * `system_parameters` are a set of `SystemParameters` containing the
+    ///   distinguished basepoints, `G` and `H`.
+    /// * `secret_key` is an `Option<&IssuerSecretKey>`.  If `None`, a new
+    ///   `IssuerSecretKey` will be created.
     pub fn new(system_parameters: SystemParameters, secret_key: Option<&IssuerSecretKey>) -> Self {
         let key: IssuerSecretKey = match secret_key {
             None    => IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES),
@@ -74,6 +85,30 @@ impl SignalIssuer {
     /// While the issuer can see all the credential attributes upon issuance if
     /// using this method, it does not necessarily see all attributes upon
     /// presentation.
+    ///
+    /// # Inputs
+    ///
+    /// * `request` is a `SignalCredentialRequest` containing a `proof` that the
+    ///   revealed attributes match those in some commitments, the user's phone
+    ///   number (as a `String`), and the user's `RosterEntry`.
+    ///
+    /// # Errors
+    ///
+    /// This method may return the following errors:
+    ///
+    /// * `CredentialError::NoIssuerParameters` if this `SignalIssuer`'s
+    ///   `issuer_parameters` didn't contain the correct length of public key.
+    /// * `CredentialError::NoIssuerKey` if this `SignalIssuer`'s secret `key`
+    ///   was not the correct length.
+    /// * `CredentialError::MissingData` if the user's supplied phone number (as
+    ///   a `String`) could not be successfully converted into a `PhoneNumber`
+    ///   as a `Scalar`.
+    /// * `CredentialError::VerificationFailure` if the `request`'s `proof`
+    ///   couldn't be verified.
+    ///
+    /// # Returns
+    ///
+    /// A `SignalCredentialRequest` upon successful issuance.
     pub fn issue(&self, request: &SignalCredentialRequest)
         -> Result<SignalCredentialIssuance, CredentialError>
     {

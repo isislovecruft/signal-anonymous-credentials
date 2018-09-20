@@ -51,6 +51,7 @@ use sha2::Sha512;
 
 use errors::MacError;
 
+/// A `Message` is a vector of `Scalar`s in \( \mathbb{Z}/\mathbb{Z}\ell \).
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Message(pub Vec<Scalar>);
@@ -105,6 +106,7 @@ impl Index<usize> for Message {
     }
 }
 
+/// A `Tag` for an authenticated `Message`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct Tag {
@@ -112,6 +114,7 @@ pub struct Tag {
     pub mac:     RistrettoPoint,
 }
 
+#[doc(hidden)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(non_snake_case)]
 #[repr(C)]

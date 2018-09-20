@@ -43,7 +43,12 @@ pub const NUMBER_OF_ATTRIBUTES: usize =
     ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES +
     ISSUANCE_NUMBER_OF_HIDDEN_ATTRIBUTES;
 
+/// A plaintext attribute that is revealed to the issuer when requesting a
+/// credential.
 pub type RevealedAttribute = Scalar;
+
+/// An elGamal-encrypted attribute that is hidden to the issuer when requesting
+/// a credential.
 pub type EncryptedAttribute = elgamal::Encryption;
 
 /// A request from a `SignalUser` for a `SignalCredential`, optionally
@@ -52,10 +57,22 @@ pub type EncryptedAttribute = elgamal::Encryption;
 /// formed with respect to the `SignalUser`'s `public_key, an elGamal encryption
 /// public key.
 pub struct SignalCredentialBlindRequest {
+    /// An optional vector of credential attributes which are revealed to the issuer.
     pub revealed_attributes: Option<Vec<RevealedAttribute>>,
+    /// An optional vector of credential attributes which are hidden to the issuer.
     pub encrypted_attributes: Option<Vec<EncryptedAttribute>>,
+    /// An optional zero-knowledge proof showing that:
+    ///
+    /// 1. the `encrypted_attributes` were created with the user's public key,
+    /// 2. the user knows the corresponding secret key, and
+    /// 3. the commitment in the user's `roster_entry` opens to the same plaintext
+    ///    attribute as in the encryption.
+    ///
+    /// The `blind_attributes_proof` is required if there are `encrypted_attributes`.
     pub blind_attributes_proof: Option<blind_attributes::Proof>,
+    /// The user's elGamal public key.
     pub public_key: elgamal::PublicKey,
+    /// The user's `RosterEntry`.
     pub roster_entry: RosterEntry,
 }
 
@@ -83,14 +100,18 @@ pub struct SignalCredentialIssuance {
 }
 
 pub struct SignalCredentialPresentation {
+    /// A zero-knowledge proof showing that the user knows a valid rerandomised
+    /// algebraic MAC over the `revealed_attributes` and `hidden_attributes`
+    /// which was created by the `SignalIssuer`.
     pub proof: roster_membership::Proof,
     /// A Pedersen commitment to the rerandomised `mac` value in the
     /// `amacs::Tag` on a `SignalUser`'s `SignalCredential`.
     pub rerandomized_mac_commitment: pedersen::Commitment,
+    /// A rerandomised nonce for an algebraic MAC.
     pub rerandomized_nonce: RistrettoPoint,
-    /// DOCDOC
+    /// A vector of revealed attributes for this credential presentation.
     pub revealed_attributes: Vec<RevealedAttribute>,
-    /// DOCDOC
+    /// A vector of hidden attributes for this credential presentation.
     pub hidden_attributes: Vec<pedersen::Commitment>,
     /// The user's corresponding `RosterEntry` in the `GroupMembershipRoster`.
     pub roster_entry: RosterEntry,
@@ -103,6 +124,7 @@ pub struct SignalCredential {
     /// The non-interactive zero knowledge proof that this credential is
     /// well-formed.
     pub mac: Tag,
-    /// DOCDOC
+    /// A vector of unencrypted attributes, which may later be hidden upon
+    /// presentation.
     pub attributes: Vec<RevealedAttribute>,
 }

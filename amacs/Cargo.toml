@@ -17,7 +17,11 @@ publish = false
 
 [lib]
 name = "amacs"
-# crate-type = ["staticlib", "rlib", "cdylib"]
+
+# Heck yeah, XSS As A Service.
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
+features = ["nightly"]
 
 [dependencies]
 clear_on_drop = { version = "0.2" }
