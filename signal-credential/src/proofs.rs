@@ -144,13 +144,26 @@ pub mod revealed_attributes {
     pub use super::_revealed_attributes::Proof;
 }
 
-create_nipk!(_roster_membership,
-             (m0, z0, minus_zQ, nonce),
-             (B, A, X0, P, V, Cm0, RosterEntryPhoneNumberCommitment)
+create_nipk!(_valid_credential,
+             (m0, z0, minus_zQ),
+             (B, A, X0, P, V, Cm0)
              :
              Cm0 = (P * m0 + A * z0),
-             V = (X0 * z0 + A * minus_zQ),
+             V = (X0 * z0 + A * minus_zQ)
+);
+
+pub mod valid_credential {
+    pub use super::_valid_credential::Publics;
+    pub use super::_valid_credential::Secrets;
+    pub use super::_valid_credential::Proof;
+}
+
+create_nipk!(_roster_membership,
+             (m0, z0, nonce),
+             (B, A, P, Cm0, RosterEntryPhoneNumberCommitment)
+             :
              // ECDLEQ over the two entries to prove equivalence of committed values:
+             Cm0 = (P * m0 + A * z0),
              RosterEntryPhoneNumberCommitment = (A * m0 + B * nonce)
 );
 

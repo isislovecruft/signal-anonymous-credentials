@@ -23,6 +23,7 @@ use proofs::blind_issuance;
 use proofs::issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
+use proofs::valid_credential;
 
 use roster::RosterEntry;
 
@@ -99,11 +100,12 @@ pub struct SignalCredentialIssuance {
     pub secret_key_commitment: RistrettoPoint,
 }
 
+#[derive(Clone)]
 pub struct SignalCredentialPresentation {
     /// A zero-knowledge proof showing that the user knows a valid rerandomised
     /// algebraic MAC over the `revealed_attributes` and `hidden_attributes`
     /// which was created by the `SignalIssuer`.
-    pub proof: roster_membership::Proof,
+    pub proof: valid_credential::Proof,
     /// A Pedersen commitment to the rerandomised `mac` value in the
     /// `amacs::Tag` on a `SignalUser`'s `SignalCredential`.
     pub rerandomized_mac_commitment: pedersen::Commitment,
@@ -115,6 +117,9 @@ pub struct SignalCredentialPresentation {
     pub hidden_attributes: Vec<pedersen::Commitment>,
     /// The user's corresponding `RosterEntry` in the `GroupMembershipRoster`.
     pub roster_entry: RosterEntry,
+    /// An `roster_membership::Proof` attesting that the user is in a
+    /// `GroupMembershipRoster`.
+    pub roster_membership_proof: roster_membership::Proof,
 }
 
 /// An anonymous credential belonging to a `SignalUser` and issued and verified
@@ -128,3 +133,13 @@ pub struct SignalCredential {
     /// presentation.
     pub attributes: Vec<RevealedAttribute>,
 }
+
+/// A `SignalCredential` which has already been verified.
+///
+/// # Note
+///
+/// This type is used to cause the additional proof methods called by the issuer
+/// to only be callable if the issuer has previously successfully called
+/// `SignalIssuer.verify()`.
+#[derive(Clone)]
+pub struct VerifiedSignalCredential<'a>(pub(crate) &'a SignalCredentialPresentation);

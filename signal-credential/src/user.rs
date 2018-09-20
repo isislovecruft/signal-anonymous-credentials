@@ -44,6 +44,7 @@ use proofs::blind_issuance;
 use proofs::issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
+use proofs::valid_credential;
 use roster::GroupRosterKey;
 use roster::RosterEntry;
 

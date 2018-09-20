@@ -35,7 +35,9 @@ use credential::SignalCredentialBlindRequest;
 use credential::SignalCredentialIssuance;
 use credential::SignalCredentialRequest;
 use credential::SignalCredentialPresentation;
+use credential::VerifiedSignalCredential;
 use errors::CredentialError;
+use errors::RosterError;
 use parameters::SystemParameters;
 use phone_number::PhoneNumber;
 use proofs::blind_attributes;
@@ -43,6 +45,9 @@ use proofs::blind_issuance;
 use proofs::issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
+use proofs::valid_credential;
+use roster::GroupMembershipLevel;
+use roster::GroupMembershipRoster;
 
 /// An issuer and honest verifier of `SignalCredential`s.
 pub struct SignalIssuer {
@@ -185,7 +190,9 @@ impl SignalIssuer {
         })
     }
 
-    pub fn verify(&self, presentation: &SignalCredentialPresentation) -> Result<(), CredentialError> {
+    pub fn verify<'a>(&self, presentation: &'a SignalCredentialPresentation)
+        -> Result<VerifiedSignalCredential<'a>, CredentialError>
+    {
         let P = presentation.rerandomized_nonce;
 
         // Recompute the MAC
@@ -201,22 +208,61 @@ impl SignalIssuer {
         V_prime -= presentation.rerandomized_mac_commitment;
 
         let mut transcript = Transcript::new(b"SIGNAL SHOW");
-        let publics = roster_membership::Publics {
+        let publics = valid_credential::Publics {
             B: &self.system_parameters.g,
             A: &self.system_parameters.h,
             X0: &self.issuer_parameters.Xn[0],
             P: &P,
             V: &V_prime,
             Cm0: &presentation.hidden_attributes[0].clone().into(), // XXX remove clones
-            RosterEntryPhoneNumberCommitment: &presentation.roster_entry.committed_phone_number.0.into(),
         };
 
         if presentation.proof.verify(&mut transcript, publics).is_err() {
             return Err(CredentialError::MacVerification);
         }
 
-        // XXX Do what the user asked at this point, e.g. add/remove another user, etc.
-        Ok(())
+        Ok(VerifiedSignalCredential(presentation))
+    }
+
+    pub fn verify_roster_membership(
+        &self,
+        credential: &VerifiedSignalCredential,
+        roster: &GroupMembershipRoster,
+        level: &GroupMembershipLevel,
+    ) -> Result<(), RosterError>
+    {
+        match level {
+            GroupMembershipLevel::Owner => 
+                if ! &roster.owners[..].contains(&credential.0.roster_entry) {
+                    return Err(RosterError::MemberIsNotOwner);
+                },
+            GroupMembershipLevel::Admin =>
+                if ! &roster.owners[..].contains(&credential.0.roster_entry) &&
+                ! &roster.admins[..].contains(&credential.0.roster_entry) {
+                    return Err(RosterError::MemberIsNotAdmin);
+                },
+            GroupMembershipLevel::User =>
+                if ! &roster.owners[..].contains(&credential.0.roster_entry) &&
+                ! &roster.admins[..].contains(&credential.0.roster_entry) &&
+                ! &roster.users[..].contains(&credential.0.roster_entry) {
+                    return Err(RosterError::MemberIsNotUser);
+                }
+        }
+
+        let publics = roster_membership::Publics {
+            B: &self.system_parameters.g,
+            A: &self.system_parameters.h,
+            P: &credential.0.rerandomized_nonce,
+            Cm0: &credential.0.hidden_attributes[0].clone().into(),
+            RosterEntryPhoneNumberCommitment: &credential.0.roster_entry.committed_phone_number.0.into(),
+        };
+        let mut transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
+
+        if credential.0.roster_membership_proof.verify(&mut transcript, publics).is_ok() {
+            return Ok(());
+        }
+
+        return Err(RosterError::InvalidProof);
     }
 }
 
@@ -287,12 +333,15 @@ mod test {
         // Alice wants to prove they're in the roster:
         let alice_presentation: SignalCredentialPresentation = alice.show().unwrap();
 
-        let proof: Result<(), CredentialError> = issuer.verify(&alice_presentation);
+        let verified_credential: VerifiedSignalCredential = issuer.verify(&alice_presentation).unwrap();
 
-        if proof.is_err() {
-            println!("Got an error: {:?}", proof);
-        }
-        assert!(proof.is_ok());
+        let user_proof = issuer.verify_roster_membership(&verified_credential, &roster,
+                                                         &GroupMembershipLevel::User);
+        assert!(user_proof.is_ok());
+
+        let admin_proof = issuer.verify_roster_membership(&verified_credential, &roster,
+                                                         &GroupMembershipLevel::Admin);
+        assert!(admin_proof.is_err());
     }
 }
 

@@ -81,6 +81,12 @@ pub struct GroupMembershipRoster {
     pub users: Vec<RosterEntry>,
 }
 
+pub enum GroupMembershipLevel {
+    Owner,
+    Admin,
+    User,
+}
+
 impl GroupMembershipRoster {
     pub fn new(group_id: usize, owner: RosterEntry, key: GroupRosterKey) -> GroupMembershipRoster {
         let mut roster = GroupMembershipRoster {

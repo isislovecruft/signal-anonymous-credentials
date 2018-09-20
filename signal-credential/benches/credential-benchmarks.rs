@@ -7,14 +7,19 @@ extern crate signal_credential;
 
 use criterion::Criterion;
 
+use signal_credential::GroupRosterKey;
+use signal_credential::GroupMembershipLevel;
+use signal_credential::GroupMembershipRoster;
 use signal_credential::IssuerSecretKey;
 use signal_credential::IssuerParameters;
+use signal_credential::RosterEntry;
 use signal_credential::SignalCredentialIssuance;
 use signal_credential::SignalCredentialPresentation;
 use signal_credential::SignalCredentialRequest;
 use signal_credential::SignalIssuer;
 use signal_credential::SignalUser;
 use signal_credential::SystemParameters;
+use signal_credential::VerifiedSignalCredential;
 use signal_credential::NUMBER_OF_ATTRIBUTES;
 
 const H: [u8; 32] = [ 184, 238, 220,  64,   5, 247,  91, 135,
@@ -118,6 +123,48 @@ mod credential_benches {
         });
     }
 
+    fn group_membership_server(c: &mut Criterion) {
+        let system_parameters: SystemParameters = SystemParameters::from(H);
+        let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
+        let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
+        let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
+        let alice_phone_number_input: &str = "14155551234";
+        let mut alice: SignalUser = SignalUser::new(system_parameters,
+                                                    issuer_parameters.clone(),
+                                                    None, // no encrypted attributes so the key isn't needed
+                                                    String::from(alice_phone_number_input));
+        let alice_request: SignalCredentialRequest = alice.obtain().unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request).unwrap();
+
+        alice.obtain_finish(Some(&alice_issuance));
+
+        // Pretend that Bob had previously made a Signal group with a key:
+        let bob_phone_number_input: &str = "14155556666";
+        let mut bob: SignalUser = SignalUser::new(system_parameters,
+                                                  issuer_parameters.clone(),
+                                                  None, // no encrypted attributes so the key isn't needed
+                                                  String::from(bob_phone_number_input));
+        let bob_request: SignalCredentialRequest = bob.obtain().unwrap();
+        let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request).unwrap();
+
+        bob.obtain_finish(Some(&bob_issuance));
+
+        let alice_roster_entry: RosterEntry = alice.roster_entry.unwrap();
+        let bob_roster_entry: RosterEntry = bob.roster_entry.unwrap();
+        let group_roster_key: GroupRosterKey = GroupRosterKey([0u8; 32]);
+        let mut roster: GroupMembershipRoster = GroupMembershipRoster::new(42, bob_roster_entry,
+                                                                           group_roster_key);
+        roster.add_user(alice_roster_entry);
+
+        c.bench_function("step 4: group membership verification by server", move |b| {
+            let alice_presentation: SignalCredentialPresentation = alice.show().unwrap();
+            let verified_credential: VerifiedSignalCredential = issuer.verify(&alice_presentation).unwrap().clone();
+
+            b.iter(|| issuer.verify_roster_membership(&verified_credential, &roster,
+                                                      &GroupMembershipLevel::User))
+        });
+    }
+
     criterion_group!{
         name = credential_benches;
         config = Criterion::default();
@@ -127,6 +174,7 @@ mod credential_benches {
             credential_obtain_client,
             credential_presentation_client,
             credential_verification_server,
+            group_membership_server,
     }
 }
 

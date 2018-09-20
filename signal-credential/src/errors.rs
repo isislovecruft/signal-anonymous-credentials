@@ -71,7 +71,12 @@ impl From<NoneError> for CredentialError {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum RosterError {
     CouldNotAddMember,
+    InvalidProof,
     MemberAlreadyPresent,
+    MemberIsNotOwner,
+    MemberIsNotAdmin,
+    MemberIsNotUser,
+    MissingProof,
 }
 
 impl fmt::Display for RosterError {
@@ -79,8 +84,18 @@ impl fmt::Display for RosterError {
         match *self {
             RosterError::CouldNotAddMember
                 => write!(f, "Could not add member to roster for unknown reason"),
+            RosterError::InvalidProof
+                => write!(f, "The user's proof of roster membership could not be verified"),
             RosterError::MemberAlreadyPresent
                 => write!(f, "The user is already present in the roster"),
+            RosterError::MemberIsNotOwner
+                => write!(f, "The user is not an owner of the group"),
+            RosterError::MemberIsNotAdmin
+                => write!(f, "The user is not an admin of the group"),
+            RosterError::MemberIsNotUser
+                => write!(f, "The user is not in the group"),
+            RosterError::MissingProof
+                => write!(f, "The user did not supply proof of roster membership"),
         }
     }
 }
