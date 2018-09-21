@@ -282,4 +282,25 @@ mod test {
         assert!(key.verify(&tagged_m1, &m1).is_ok());
         assert!(key.verify(&tagged_m1, &m2).is_err());
     }
+
+    #[test]
+    fn test_rerandomised_mac_authentication() {
+        let mut csprng = thread_rng();
+        let key = SecretKey::new(2, &mut csprng);
+        let s1 = Scalar::random(&mut csprng);
+        let s2 = Scalar::random(&mut csprng);
+        let s3 = Scalar::random(&mut csprng);
+        let mut v1 = Vec::new();
+        v1.extend_from_slice(&[s1, s2]);
+        let m1 = Message(v1);
+        let mut v2 = Vec::new();
+        v2.extend_from_slice(&[s1, s3]);
+        let m2 = Message(v2);
+        let tag = key.mac(&m1, &mut csprng).unwrap();
+
+        let rerandomised = Rerandomization::new(&mut csprng).apply_to_tag(&tag);
+
+        assert!(key.verify(&rerandomised, &m1).is_ok());
+        assert!(key.verify(&rerandomised, &m2).is_err());
+    }
 }
