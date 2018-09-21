@@ -111,8 +111,8 @@ impl Index<usize> for Message {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct Tag {
-    pub nonce:   RistrettoPoint,
-    pub mac:     RistrettoPoint,
+    pub nonce: RistrettoPoint,
+    pub mac: RistrettoPoint,
 }
 
 #[doc(hidden)]
