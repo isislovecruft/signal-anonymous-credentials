@@ -20,7 +20,8 @@ use curve25519_dalek::traits::Identity;
 
 use elgamal;
 
-use rand::thread_rng;
+use rand_core::RngCore;
+use rand_core::CryptoRng;
 
 use zkp::Transcript;
 
@@ -69,9 +70,16 @@ impl SignalIssuer {
     ///   distinguished basepoints, `G` and `H`.
     /// * `secret_key` is an `Option<&IssuerSecretKey>`.  If `None`, a new
     ///   `IssuerSecretKey` will be created.
-    pub fn new(system_parameters: SystemParameters, secret_key: Option<&IssuerSecretKey>) -> Self {
+    pub fn new<R>(
+        system_parameters: SystemParameters,
+        secret_key: Option<&IssuerSecretKey>,
+        csprng: &mut R,
+    ) -> Self
+    where
+        R: RngCore + CryptoRng,
+    {
         let key: IssuerSecretKey = match secret_key {
-            None    => IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES),
+            None    => IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES, csprng),
             Some(x) => x.clone(),
         };
         let issuer_parameters: IssuerParameters = key.get_issuer_parameters(&system_parameters.h);
@@ -114,8 +122,10 @@ impl SignalIssuer {
     /// # Returns
     ///
     /// A `SignalCredentialRequest` upon successful issuance.
-    pub fn issue(&self, request: &SignalCredentialRequest)
+    pub fn issue<R>(&self, request: &SignalCredentialRequest, rng: &mut R)
         -> Result<SignalCredentialIssuance, CredentialError>
+    where
+        R: RngCore + CryptoRng,
     {
         // Obtain our needed public and secret key material.
         let X1: RistrettoPoint = match self.issuer_parameters.Xn.get(0) {
@@ -152,11 +162,11 @@ impl SignalIssuer {
         let mut issuance_transcript = Transcript::new(b"SIGNAL ISSUANCE");
 
         // Calculate (u, u'), i.e. (nonce, mac)
-        let tag: amacs::Tag = self.key.mac(&attributes).or(Err(CredentialError::MacCreation))?;
+        let tag: amacs::Tag = self.key.mac(&attributes, rng).or(Err(CredentialError::MacCreation))?;
 
         // Choose a blinding factor, x~0
-        let mut csprng = issuance_transcript.fork_transcript().reseed_from_rng(&mut thread_rng());
-        let x0_tilde: Scalar = Scalar::random(&mut csprng);
+        let mut csprng = issuance_transcript.fork_transcript().reseed_from_rng(rng);
+        let x0_tilde: Scalar = Scalar::random(rng);
 
         // Construct a commitment to the issuer secret key
         let Cx0: RistrettoPoint = (&self.system_parameters.g * &self.key.x0) +
@@ -271,6 +281,7 @@ mod test {
     use super::*;
 
     use parameters::SystemParameters;
+    use rand::thread_rng;
     use roster::GroupMembershipRoster;
     use roster::GroupRosterKey;
     use roster::RosterEntry;
@@ -283,10 +294,15 @@ mod test {
 
     #[test]
     fn credential_issuance_and_presentation() {
+        // Create RNGs for each party.
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+        let mut bob_rng = thread_rng();
+
         // Create an issuer
         let system_parameters: SystemParameters = SystemParameters::from(H);
-        let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
-        let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
+        let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES, &mut issuer_rng);
+        let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key), &mut issuer_rng);
 
         // Get the issuer's parameters so we can advertise them to new users:
         let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
@@ -305,17 +321,17 @@ mod test {
                                                   String::from(bob_phone_number_input));
 
         // Form a request for a credential
-        let alice_request: SignalCredentialRequest = alice.obtain().unwrap();
+        let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
 
         // Try to get the issuer to give Alice a new credential
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
 
         // Give the result back to Alice for processing
         alice.obtain_finish(Some(&alice_issuance));
         
         // And the same for Bob:
-        let bob_request: SignalCredentialRequest = bob.obtain().unwrap();
-        let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request).unwrap();
+        let bob_request: SignalCredentialRequest = bob.obtain(&mut bob_rng).unwrap();
+        let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request, &mut issuer_rng).unwrap();
 
         bob.obtain_finish(Some(&bob_issuance));
 
@@ -331,7 +347,7 @@ mod test {
         let _ = roster.add_user(alice_roster_entry); // XXX that api is bad
 
         // Alice wants to prove they're in the roster:
-        let alice_presentation: SignalCredentialPresentation = alice.show().unwrap();
+        let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng).unwrap();
 
         let verified_credential: VerifiedSignalCredential = issuer.verify(&alice_presentation).unwrap();
 

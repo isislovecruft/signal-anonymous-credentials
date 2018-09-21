@@ -15,10 +15,13 @@ extern crate alloc;
 extern crate clear_on_drop;
 extern crate curve25519_dalek;
 extern crate failure;
-extern crate rand;
+extern crate rand_core;
 extern crate sha2;
 #[cfg(feature = "std")]
 extern crate std;
+
+#[cfg(test)]
+extern crate rand;
 
 mod amacs;
 mod errors;

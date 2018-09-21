@@ -4,8 +4,11 @@
 #[macro_use]
 extern crate criterion;
 extern crate signal_credential;
+extern crate rand;
 
 use criterion::Criterion;
+
+use rand::thread_rng;
 
 use signal_credential::GroupRosterKey;
 use signal_credential::GroupMembershipLevel;
@@ -31,6 +34,8 @@ mod credential_benches {
     use super::*;
 
     fn credential_request_client(c: &mut Criterion) {
+        let mut alice_rng = thread_rng();
+
         let system_parameters: SystemParameters = SystemParameters::from(H);
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
@@ -42,11 +47,14 @@ mod credential_benches {
                                                     String::from(alice_phone_number_input));
 
         c.bench_function("step 0: credential request from client", move |b| {
-            b.iter(|| alice.obtain())
+            b.iter(|| alice.obtain(&mut alice_rng))
         });
     }
 
     fn credential_issuance_server(c: &mut Criterion) {
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+
         let system_parameters: SystemParameters = SystemParameters::from(H);
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
@@ -56,14 +64,17 @@ mod credential_benches {
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
                                                     String::from(alice_phone_number_input));
-        let alice_request: SignalCredentialRequest = alice.obtain().unwrap();
+        let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
 
         c.bench_function("step 1: credential issuance by server", move |b| {
-            b.iter(|| issuer.issue(&alice_request))
+            b.iter(|| issuer.issue(&alice_request, &mut issuer_rng))
         });
     }
 
     fn credential_obtain_client(c: &mut Criterion) {
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+
         let system_parameters: SystemParameters = SystemParameters::from(H);
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
@@ -73,8 +84,8 @@ mod credential_benches {
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
                                                     String::from(alice_phone_number_input));
-        let alice_request: SignalCredentialRequest = alice.obtain().unwrap();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request).unwrap();
+        let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
 
         c.bench_function("step 2: credential obtain by client", move |b| {
             b.iter(|| alice.obtain_finish(Some(&alice_issuance)))
@@ -82,6 +93,9 @@ mod credential_benches {
     }
 
     fn credential_presentation_client(c: &mut Criterion) {
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+
         let system_parameters: SystemParameters = SystemParameters::from(H);
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
@@ -91,17 +105,20 @@ mod credential_benches {
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
                                                     String::from(alice_phone_number_input));
-        let alice_request: SignalCredentialRequest = alice.obtain().unwrap();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request).unwrap();
+        let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
 
         alice.obtain_finish(Some(&alice_issuance));
 
         c.bench_function("step 3: credential presentation by client", move |b| {
-            b.iter(|| alice.show())
+            b.iter(|| alice.show(&mut alice_rng))
         });
     }
 
     fn credential_verification_server(c: &mut Criterion) {
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+
         let system_parameters: SystemParameters = SystemParameters::from(H);
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
@@ -111,12 +128,12 @@ mod credential_benches {
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
                                                     String::from(alice_phone_number_input));
-        let alice_request: SignalCredentialRequest = alice.obtain().unwrap();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request).unwrap();
+        let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
 
         alice.obtain_finish(Some(&alice_issuance));
 
-        let alice_presentation: SignalCredentialPresentation = alice.show().unwrap();
+        let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng).unwrap();
 
         c.bench_function("step 4: credential verification by server", move |b| {
             b.iter(|| issuer.verify(&alice_presentation))
@@ -124,6 +141,10 @@ mod credential_benches {
     }
 
     fn group_membership_server(c: &mut Criterion) {
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+        let mut bob_rng = thread_rng();
+
         let system_parameters: SystemParameters = SystemParameters::from(H);
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
@@ -133,8 +154,8 @@ mod credential_benches {
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
                                                     String::from(alice_phone_number_input));
-        let alice_request: SignalCredentialRequest = alice.obtain().unwrap();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request).unwrap();
+        let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
 
         alice.obtain_finish(Some(&alice_issuance));
 
@@ -144,8 +165,8 @@ mod credential_benches {
                                                   issuer_parameters.clone(),
                                                   None, // no encrypted attributes so the key isn't needed
                                                   String::from(bob_phone_number_input));
-        let bob_request: SignalCredentialRequest = bob.obtain().unwrap();
-        let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request).unwrap();
+        let bob_request: SignalCredentialRequest = bob.obtain(&mut bob_rng).unwrap();
+        let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request, &mut issuer_rng).unwrap();
 
         bob.obtain_finish(Some(&bob_issuance));
 
@@ -157,7 +178,7 @@ mod credential_benches {
         roster.add_user(alice_roster_entry);
 
         c.bench_function("step 4: group membership verification by server", move |b| {
-            let alice_presentation: SignalCredentialPresentation = alice.show().unwrap();
+            let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng).unwrap();
             let verified_credential: VerifiedSignalCredential = issuer.verify(&alice_presentation).unwrap().clone();
 
             b.iter(|| issuer.verify_roster_membership(&verified_credential, &roster,

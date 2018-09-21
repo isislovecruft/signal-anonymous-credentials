@@ -22,7 +22,8 @@ use elgamal;
 
 use pedersen;
 
-use rand::thread_rng;
+use rand_core::RngCore;
+use rand_core::CryptoRng;
 
 use zkp::Transcript;
 
@@ -87,9 +88,12 @@ impl SignalUser {
     ///
     /// # Returns
     ///
-    pub fn obtain(&mut self) -> Result<SignalCredentialRequest, CredentialError> {
+    pub fn obtain<R>(&mut self, rng: &mut R) -> Result<SignalCredentialRequest, CredentialError>
+    where
+        R: RngCore + CryptoRng,
+    {
         let mut transcript = Transcript::new(b"SIGNAL ISSUANCE REQUEST");
-        let mut csprng = transcript.fork_transcript().reseed_from_rng(&mut thread_rng());
+        let mut csprng = transcript.fork_transcript().reseed_from_rng(rng);
 
         // Map our phone number to a scalar mod ell.
         let number: PhoneNumber = PhoneNumber::try_from_string(&self.phone_number)?;
@@ -163,21 +167,24 @@ impl SignalUser {
     /// Show proof of membership in a roster of signal group users.
     ///
     /// DOCDOC
-    pub fn show(&self) -> Result<SignalCredentialPresentation, CredentialError> {
+    pub fn show<R>(&self, rng: &mut R) -> Result<SignalCredentialPresentation, CredentialError>
+    where
+        R: RngCore + CryptoRng,
+    {
         let credential: &SignalCredential = match self.credential {
             Some(ref x) => x,
             None        => return Err(CredentialError::MissingData),
         };
 
         let mut transcript = Transcript::new(b"SIGNAL SHOW");
-        let mut csprng = transcript.fork_transcript().reseed_from_rng(&mut thread_rng());
+        let mut csprng = transcript.fork_transcript().reseed_from_rng(rng);
 
         const N_ATTRIBUTES: usize = PRESENTATION_NUMBER_OF_HIDDEN_ATTRIBUTES;
 
         // Rerandomise the aMAC to prevent trivial linkages.
         //
         // XXX do we want to pass in a merlin transcript instead of using the rng here?
-        let rerandomized_mac: amacs::Tag = amacs::Rerandomization::new().apply_to_tag(&credential.mac);
+        let rerandomized_mac: amacs::Tag = amacs::Rerandomization::new(&mut csprng).apply_to_tag(&credential.mac);
 
         let A = self.system_parameters.h;
         let B = self.system_parameters.g;

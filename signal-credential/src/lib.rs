@@ -23,12 +23,15 @@ extern crate core;
 extern crate curve25519_dalek;
 extern crate failure;
 extern crate elgamal;
-extern crate rand;
+extern crate rand_core;
 #[macro_use]
 extern crate serde_derive;
 extern crate subtle;
 #[macro_use]
 extern crate zkp;
+
+#[cfg(test)]
+extern crate rand;
 
 pub mod credential;
 pub mod errors;

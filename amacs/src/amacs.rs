@@ -1,13 +1,13 @@
 // -*- mode: rust; -*-
 //
-// This file is part of groupzk.
+// This file is part of amacs.
 // Copyright (c) 2018 Signal Foundation
 // See LICENSE for licensing information.
 //
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-//! Implementation of the MAC_GGM scheme in CMZ'13.
+//! Implementation of the MAC_GGM scheme in [CMZ'13](https://eprint.iacr.org/2013/516.pdf).
 //!
 //! The system parameters are:
 //! 
@@ -45,7 +45,8 @@ use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::ristretto::RistrettoPoint;
 
-use rand::thread_rng;
+use rand_core::RngCore;
+use rand_core::CryptoRng;
 
 use sha2::Sha512;
 
@@ -143,13 +144,15 @@ impl Drop for SecretKey {
 
 impl SecretKey {
     /// Create a new `SecretKey` for authenticating a message of `n` `Scalar`s.
-    pub fn new(n: usize) -> SecretKey {
-        let mut csprng = thread_rng();
+    pub fn new<R>(n: usize, csprng: &mut R) -> SecretKey
+    where
+        R: RngCore + CryptoRng,
+    {
         let mut xn: Vec<Scalar> = Vec::with_capacity(n);
-        let x0: Scalar = Scalar::random(&mut csprng);
+        let x0: Scalar = Scalar::random(csprng);
 
         for _ in 0..n {
-            xn.push(Scalar::random(&mut csprng));
+            xn.push(Scalar::random(csprng));
         }
 
         SecretKey{ x0, xn }
@@ -171,13 +174,15 @@ impl SecretKey {
         IssuerParameters{ Xn }
     }
 
-    pub fn mac(&self, message: &Message) -> Result<Tag, MacError> {
+    pub fn mac<R>(&self, message: &Message, csprng: &mut R) -> Result<Tag, MacError>
+    where
+        R: RngCore + CryptoRng,
+    {
         if self.xn.len() != message.0.len() {
             return Err(MacError::MessageLengthError{ length: self.xn.len() });
         }
 
-        let mut csprng = thread_rng();
-        let nonce: RistrettoPoint = &Scalar::random(&mut csprng) * &RISTRETTO_BASEPOINT_TABLE;
+        let nonce: RistrettoPoint = &Scalar::random(csprng) * &RISTRETTO_BASEPOINT_TABLE;
         let mut exponent: Scalar = self.x0;
 
         for (xi, mi) in self.xn.iter().zip(message.0.iter()) {
@@ -235,8 +240,11 @@ impl<'a, 'b> Mul<&'b Tag> for &'a Rerandomization {
 }
 
 impl Rerandomization {
-    pub fn new() -> Rerandomization {
-        Rerandomization(Scalar::random(&mut thread_rng()))
+    pub fn new<R>(csprng: &mut R) -> Rerandomization
+    where
+        R: RngCore + CryptoRng,
+    {
+        Rerandomization(Scalar::random(csprng))
     }
 
     pub fn apply_to_tag(&self, tag: &Tag) -> Tag {
@@ -254,10 +262,12 @@ impl Drop for Rerandomization {
 mod test {
     use super::*;
 
+    use rand::thread_rng;
+
     #[test]
     fn test_mac_authentication() {
         let mut csprng = thread_rng();
-        let key = SecretKey::new(2);
+        let key = SecretKey::new(2, &mut csprng);
         let s1 = Scalar::random(&mut csprng);
         let s2 = Scalar::random(&mut csprng);
         let s3 = Scalar::random(&mut csprng);
@@ -267,10 +277,9 @@ mod test {
         let mut v2 = Vec::new();
         v2.extend_from_slice(&[s1, s3]);
         let m2 = Message(v2);
-        let tagged_m1 = key.mac(&m1).unwrap();
-        let tagged_m2 = Tag{ nonce: tagged_m1.nonce,
-                             mac:   tagged_m1.mac };
+        let tagged_m1 = key.mac(&m1, &mut csprng).unwrap();
+
         assert!(key.verify(&tagged_m1, &m1).is_ok());
-        assert!(key.verify(&tagged_m2, &m2).is_err());
+        assert!(key.verify(&tagged_m1, &m2).is_err());
     }
 }
