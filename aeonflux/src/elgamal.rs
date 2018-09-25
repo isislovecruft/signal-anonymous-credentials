@@ -1,6 +1,6 @@
 // -*- mode: rust; -*-
 //
-// This file is part of elgamal.
+// This file is part of aeonflux.
 // Copyright (c) 2018 Signal Foundation
 // See LICENSE for licensing information.
 //
@@ -8,20 +8,20 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
 #[cfg(not(feature = "std"))]
-use core::ops::Add;
+use core::ops::{Add, Mul};
 
 #[cfg(feature = "std")]
-use std::ops::Add;
+use std::ops::{Add, Mul};
 
 use clear_on_drop::clear::Clear;
 
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
+use curve25519_dalek::ristretto::RistrettoBasepointTable;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
-use rand::CryptoRng;
-use rand::Rng;
-
+use rand_core::CryptoRng;
+use rand_core::RngCore;
 
 #[derive(Clone, Copy, Debug)]
 pub struct PublicKey(pub(crate) RistrettoPoint);
@@ -97,12 +97,28 @@ impl Drop for Ephemeral {
     }
 }
 
+impl<'a, 'b> Mul<&'b RistrettoBasepointTable> for &'a Ephemeral {
+    type Output = RistrettoPoint;
+
+    fn mul(self, other: &'b RistrettoBasepointTable) -> RistrettoPoint {
+        &self.0 * other
+    }
+}
+
+impl<'a, 'b> Mul<&'a Ephemeral> for &'b RistrettoBasepointTable {
+    type Output = RistrettoPoint;
+
+    fn mul(self, other: &'a Ephemeral) -> RistrettoPoint {
+        self * &other.0
+    }
+}
+
 impl PublicKey {
     pub fn encrypt(&self, message: &Message, nonce: &Ephemeral)
         -> Encryption
     {
+        // The mapping to the point representing the message must be invertible
         let commitment: RistrettoPoint = &RISTRETTO_BASEPOINT_TABLE * &nonce.0;
-        // XXX The mapping to the point representing the message must be invertible
         let encryption: RistrettoPoint = &message.0 + (&self.0 * &nonce.0);
 
         Encryption{ commitment, encryption }
@@ -124,7 +140,7 @@ impl<'a> From<&'a SecretKey> for PublicKey {
 impl SecretKey {
     pub fn generate<C>(csprng: &mut C) -> SecretKey
     where
-        C: CryptoRng + Rng,
+        C: CryptoRng + RngCore,
     {
         SecretKey(Scalar::random(csprng))
     }
@@ -145,7 +161,7 @@ impl From<SecretKey> for Scalar {
 impl Keypair {
     pub fn generate<C>(csprng: &mut C) -> Keypair
     where 
-        C: CryptoRng + Rng,
+        C: CryptoRng + RngCore,
     {
         let secret: SecretKey = SecretKey::generate(csprng);
         let public: PublicKey = PublicKey::from(&secret);
@@ -168,9 +184,10 @@ mod test {
     #[test]
     fn roundtrip() {
         let mut csprng = thread_rng();
-        let msg = Message(&RISTRETTO_BASEPOINT_TABLE * &Scalar::random(&mut csprng));
+        let nonce = Ephemeral(Scalar::random(&mut csprng));
+        let msg = Message(&RISTRETTO_BASEPOINT_TABLE * &nonce);
         let keypair = Keypair::generate(&mut csprng);
-        let enc = keypair.public.encrypt(&msg, &mut csprng);
+        let enc = keypair.public.encrypt(&msg, &nonce);
 
         assert!(keypair.secret.decrypt(&enc) == msg.0);
     }

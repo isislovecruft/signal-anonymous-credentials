@@ -12,20 +12,15 @@ use alloc::string::String;
 
 use std::ops::{Index};
 
-use amacs;
+use aeonflux::amacs::{self};
+use aeonflux::credential::EncryptedAttribute;
+use aeonflux::elgamal::{self};
+use aeonflux::pedersen::{self};
 
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
-use elgamal;
-
-use pedersen;
-
-use subtle::Choice;
-use subtle::ConstantTimeEq;
-
-use credential::EncryptedAttribute;
-use errors::CredentialError;
+use errors::PhoneNumberError;
 
 /// A `Scalar` which represents a canonicalised phone number and may be used
 /// arithmetically.
@@ -62,11 +57,12 @@ impl PhoneNumber {
     /// `001 800 642 7676` into:
     ///
     /// ```
+    /// # extern crate aeonflux;
     /// # extern crate curve25519_dalek;
     /// # extern crate signal_credential;
     /// #
     /// # use curve25519_dalek::scalar::Scalar;
-    /// # use signal_credential::errors::CredentialError;
+    /// # use aeonflux::errors::CredentialError;
     /// use signal_credential::phone_number::PhoneNumber;
     ///
     /// # fn do_test() -> Result<(), CredentialError> {
@@ -93,12 +89,12 @@ impl PhoneNumber {
     //         PhoneNumber::try_from_string(source)
     //     }
     // }
-    pub fn try_from_string(source: &String) -> Result<Self, CredentialError> {
+    pub fn try_from_string(source: &String) -> Result<Self, PhoneNumberError> {
         let bytes: &[u8] = source.as_bytes();
         let length: usize = bytes.len();
 
         if length > 32 {
-            return Err(CredentialError::PhoneNumberLengthExceeded);
+            return Err(PhoneNumberError::LengthExceeded);
         }
         let mut bits: [u8; 32] = [0u8; 32];
 

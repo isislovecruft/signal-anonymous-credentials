@@ -16,45 +16,6 @@
 //! [CMZ'13](https://eprint.iacr.org/2013/516.pdf) because the latter was
 //! missing signification details of the construction.
 
-/// A NIPK showing correct non-blinded issuance.
-///
-/// # Inputs
-///
-/// Secrets:
-///
-/// * `x0, x1, x2` are the `SignalIssuer`'s private key material.
-/// * `x0_tilde` is a blinding factor for the secret key.
-/// * `m1x1` is the message `m1` multiplied by the secret key `x1`.
-/// * `m2x2` is the message `m2` multiplied by the secret key `x2`.
-///
-/// Publics:
-///
-/// * `u` is the aMAC nonce.
-/// * `Cx0` is a Pedersen commitment to the secret key `x0`.
-/// * `B` and `A` are generators of the group, where `A` is chosen orthogonally
-///   such that `log_B(A)` is intractible.
-/// * `X1, X2` are the issuer's public key material.
-/// * `u_prime` is the aMAC tag.
-//
-// TODO The "m1x1" is `m1*x1` and is a hack because the zkp crate doesn't
-// currently support multiplying to scalars together before multiplying them by
-// the public point, so we multiply them before passing them into the
-// macro-generated code as an additional secret value (since it depend on x1).
-create_nipk!(_issuance,
-             (x0, x1, x0_tilde, m1x1),
-             (P, Q, Cx0, B, A, X1)
-             :
-             Q = (P * x0 + P * m1x1),
-             Cx0 = (B * x0 + A * x0_tilde),
-             X1 = (A * x1)
-);
-
-pub mod issuance {
-    pub use super::_issuance::Publics;
-    pub use super::_issuance::Secrets;
-    pub use super::_issuance::Proof;
-}
-
 /// A NIPK proving that the blinded attributes are valid elGamal encryptions
 /// created with the user's public key.
 ///
@@ -142,20 +103,6 @@ pub mod revealed_attributes {
     pub use super::_revealed_attributes::Publics;
     pub use super::_revealed_attributes::Secrets;
     pub use super::_revealed_attributes::Proof;
-}
-
-create_nipk!(_valid_credential,
-             (m0, z0, minus_zQ),
-             (B, A, X0, P, V, Cm0)
-             :
-             Cm0 = (P * m0 + A * z0),
-             V = (X0 * z0 + A * minus_zQ)
-);
-
-pub mod valid_credential {
-    pub use super::_valid_credential::Publics;
-    pub use super::_valid_credential::Secrets;
-    pub use super::_valid_credential::Proof;
 }
 
 create_nipk!(_roster_membership,

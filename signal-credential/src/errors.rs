@@ -19,54 +19,7 @@ use core::option::NoneError;
 #[cfg(feature = "std")]
 use std::option::NoneError;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
-pub enum CredentialError {
-    CredentialIssuance,
-    MacCreation,
-    MacVerification,
-    MissingData,
-    NoIssuerKey,
-    NoIssuerParameters,
-    NoSystemParameters,
-    PhoneNumberLengthExceeded,
-    WrongNumberOfAttributes,
-    VerificationFailure,
-}
-
-impl fmt::Display for CredentialError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            CredentialError::CredentialIssuance
-                => write!(f, "Failed to get a credential issued"),
-            CredentialError::MacCreation
-                => write!(f, "Could not create a MAC"),
-            CredentialError::MacVerification
-                => write!(f, "Could not verify a MAC"),
-            CredentialError::MissingData
-                => write!(f, "Some data, such as a key or zkproof, was missing"),
-            CredentialError::NoIssuerKey
-                => write!(f, "The issuer was not initialised properly and has no secret key"),
-            CredentialError::NoIssuerParameters
-                => write!(f, "The issuer was not initialised properly and has no parameters"),
-            CredentialError::NoSystemParameters
-                => write!(f, "The system parameters were not initialised"),
-            CredentialError::PhoneNumberLengthExceeded
-                => write!(f, "A canonicalised phone number cannot be more than 32 bytes"),
-            CredentialError::WrongNumberOfAttributes
-                => write!(f, "The credential did not have the correct number of attributes"),
-            CredentialError::VerificationFailure
-                => write!(f, "The proof could not be verified"),
-        }
-    }
-}
-
-impl ::failure::Fail for CredentialError { }
-
-impl From<NoneError> for CredentialError {
-    fn from(_source: NoneError) -> CredentialError {
-        CredentialError::MissingData
-    }
-}
+use aeonflux::errors::CredentialError;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum RosterError {
@@ -105,5 +58,36 @@ impl ::failure::Fail for RosterError { }
 impl From<NoneError> for RosterError {
     fn from(_source: NoneError) -> RosterError {
         RosterError::CouldNotAddMember
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum PhoneNumberError {
+    LengthExceeded,
+    InvalidPhoneNumber,
+}
+
+impl fmt::Display for PhoneNumberError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            PhoneNumberError::LengthExceeded
+                => write!(f, "A canonicalised phone number cannot be more than 32 bytes"),
+            PhoneNumberError::InvalidPhoneNumber
+                => write!(f, "The user's proof of roster membership could not be verified"),
+        }
+    }
+}
+
+impl ::failure::Fail for PhoneNumberError { }
+
+impl From<NoneError> for PhoneNumberError {
+    fn from(_source: NoneError) -> PhoneNumberError {
+        PhoneNumberError::InvalidPhoneNumber
+    }
+}
+
+impl From<PhoneNumberError> for CredentialError {
+    fn from(_source: PhoneNumberError) -> CredentialError {
+        NoneError.into()
     }
 }

@@ -1,6 +1,6 @@
 // -*- mode: rust; -*-
 //
-// This file is part of groupzk.
+// This file is part of aeonflux.
 // Copyright (c) 2018 Signal Foundation
 // See LICENSE for licensing information.
 //

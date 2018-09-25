@@ -1,6 +1,6 @@
 // -*- mode: rust; -*-
 //
-// This file is part of groupzk.
+// This file is part of aeonflux.
 // Copyright (c) 2018 Signal Foundation
 // See LICENSE for licensing information.
 //
@@ -17,29 +17,24 @@ use curve25519_dalek::scalar::Scalar;
 /// The `SystemParameters` define the system-wide context in which the anonymous
 /// credentials scheme and its proofs are constructed within.
 ///
-/// They are defined as `(G, p, g, h)` where:
+/// They are defined as \\( \( \mathbb{G}, p, G, H \) \\) where:
 ///
-/// * `G` is a group with order `p`,
-/// * `p` is a `k`-bit prime (`k = 255` in the case of using the Ristretto255
+/// * \\( \mathbb{G} \\) is a group with order \\( p \\), where
+///   `p` is a `k`-bit prime (`k = 255` in the case of using the Ristretto255
 ///   group),
 /// * `g` and `h` are generators of `G`,
 /// * `log_g(h)` is unknown, that is `h` is chosen as a distinguished basepoint
 ///   which is orthogonal to `g`.
 ///
-/// Although `g` and `h` are basepoints, they are written lowercased, in order
-/// to follow the notation used in the CMZ'13 paper.
-///
-/// # Note
-///
-/// When owned by a `CredentialUser` the `h` member is a `Non` because a
-/// user must not know `h`.
+//
+// DOCDOC fix above to use latex
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SystemParameters {
-    pub(crate) p: Scalar,
-    pub(crate) g: RistrettoPoint,
-    pub(crate) h: RistrettoPoint,
+    pub g: RistrettoPoint,
+    pub h: RistrettoPoint,
 }
 
+// XXX use hyphae notation
 impl From<RistrettoPoint> for SystemParameters {
     /// Construct new system parameters from a chosen basepoint, `h`.
     ///
@@ -54,9 +49,10 @@ impl From<RistrettoPoint> for SystemParameters {
     fn from(h: RistrettoPoint) -> SystemParameters {
         debug_assert!(h != RISTRETTO_BASEPOINT_POINT);
 
-        SystemParameters{ p: BASEPOINT_ORDER,
-                          g: RISTRETTO_BASEPOINT_POINT,
-                          h: h, }
+        SystemParameters {
+            g: RISTRETTO_BASEPOINT_POINT,
+            h: h,
+        }
     }
 }
 

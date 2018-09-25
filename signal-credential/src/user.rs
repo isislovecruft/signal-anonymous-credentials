@@ -10,17 +10,21 @@
 // We denote group elements with capital and scalars with lowercased names.
 #![allow(non_snake_case)]
 
-use amacs;
-use amacs::IssuerParameters;
-use amacs::SecretKey;
+use aeonflux::amacs::{self, Tag};
+use aeonflux::amacs::IssuerParameters;
+use aeonflux::credential::CredentialPresentation;
+use aeonflux::credential::CredentialRequest;
+use aeonflux::credential::EncryptedAttribute;
+use aeonflux::elgamal::{self};
+use aeonflux::errors::CredentialError;
+use aeonflux::parameters::SystemParameters;
+use aeonflux::pedersen::{self, Commitment};
+use aeonflux::user::User;
+use aeonflux::proofs::valid_credential;
 
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
-
-use elgamal;
-
-use pedersen;
 
 use rand_core::RngCore;
 use rand_core::CryptoRng;
@@ -33,36 +37,24 @@ use credential::SignalCredentialBlindRequest;
 use credential::SignalCredentialIssuance;
 use credential::SignalCredentialPresentation;
 use credential::SignalCredentialRequest;
-use credential::EncryptedAttribute;
 use credential::SignalCredential;
-use errors::CredentialError;
-use parameters::SystemParameters;
 use phone_number::CommittedPhoneNumber;
 use phone_number::EncryptedPhoneNumber;
 use phone_number::PhoneNumber;
 use proofs::blind_attributes;
 use proofs::blind_issuance;
-use proofs::issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
-use proofs::valid_credential;
 use roster::GroupRosterKey;
 use roster::RosterEntry;
 
 /// DOCDOC
 pub struct SignalUser {
-    pub system_parameters: SystemParameters,
-    pub issuer_parameters: IssuerParameters,
-    key: Option<elgamal::Keypair>,
-    phone_number: String,
-    credential: Option<SignalCredential>,
+    pub user: User,
     pub roster_entry: Option<RosterEntry>,
     roster_entry_opening: Option<Scalar>,
+    phone_number: String,
 }
-
-// impl CredentialUser for SignalUser {
-//     type Issuer = SignalIssuer;
-//     type Credential = SignalCredential;
 
 impl SignalUser {
     /// DOCDOC
@@ -73,12 +65,11 @@ impl SignalUser {
         phone_number: String,
     ) -> SignalUser
     {
-        SignalUser{
-            system_parameters: system_parameters,
-            issuer_parameters: issuer_parameters,
-            key: key,
+        let user = User::new(system_parameters, issuer_parameters, key);
+
+        SignalUser {
+            user: user,
             phone_number: phone_number,
-            credential: None,
             roster_entry: None,
             roster_entry_opening: None,
         }
@@ -88,7 +79,10 @@ impl SignalUser {
     ///
     /// # Returns
     ///
-    pub fn obtain<R>(&mut self, rng: &mut R) -> Result<SignalCredentialRequest, CredentialError>
+    pub fn obtain<R>(
+        &mut self,
+        rng: &mut R,
+    ) -> Result<SignalCredentialRequest, CredentialError>
     where
         R: RngCore + CryptoRng,
     {
@@ -101,8 +95,8 @@ impl SignalUser {
         // Create our roster entry.
         let opening = Scalar::random(&mut csprng);
         let commitment = CommittedPhoneNumber::from_phone_number(&number, &opening,
-                                                                 &self.system_parameters.g,
-                                                                 &self.system_parameters.h);
+                                                                 &self.user.system_parameters.g,
+                                                                 &self.user.system_parameters.h);
         let roster_key = GroupRosterKey([1u8; 32]); // XXX
         let roster_entry = RosterEntry::new(&commitment, &number, &opening, &roster_key);
 
@@ -115,13 +109,15 @@ impl SignalUser {
             phone_number: &number.0,
         };
         let publics = revealed_attributes::Publics {
-            g: &self.system_parameters.g,
-            h: &self.system_parameters.h,
+            g: &self.user.system_parameters.g,
+            h: &self.user.system_parameters.h,
             roster_entry_commitment_number: &roster_entry.committed_phone_number.0.into(),
         };
         let proof = revealed_attributes::Proof::create(&mut transcript, publics, secrets);
+        let request = self.user.obtain(vec![number.0]);
 
         Ok(SignalCredentialRequest {
+            request: request,
             proof: proof,
             phone_number: self.phone_number.clone(),
             roster_entry: roster_entry,
@@ -134,34 +130,7 @@ impl SignalUser {
         issuance: Option<&SignalCredentialIssuance>,
     ) -> Result<(), CredentialError>
     {
-        let mut transcript = Transcript::new(b"SIGNAL ISSUANCE");
-
-        let issue: &SignalCredentialIssuance = match issuance {
-            Some(i) => i,
-            None    => return Err(CredentialError::CredentialIssuance),
-        };
-        let X1: RistrettoPoint = match self.issuer_parameters.Xn.get(0) {
-            None => return Err(CredentialError::NoIssuerParameters),
-            Some(x) => *x,
-        };
-
-        let publics: issuance::Publics = issuance::Publics {
-            P: &issue.credential.mac.nonce,
-            Q: &issue.credential.mac.mac,
-            Cx0: &issue.secret_key_commitment,
-            B: &self.system_parameters.g,
-            A: &self.system_parameters.h,
-            X1: &X1,
-        };
-
-        if issue.proof.verify(&mut transcript, publics).is_err() {
-            println!("there was an error verifying the issuance proof");
-            Err(CredentialError::CredentialIssuance)
-        } else {
-            self.credential = Some(issue.credential.clone());
-
-            Ok(())
-        }
+        self.user.obtain_finish(issuance)
     }
 
     /// Show proof of membership in a roster of signal group users.
@@ -171,72 +140,16 @@ impl SignalUser {
     where
         R: RngCore + CryptoRng,
     {
-        let credential: &SignalCredential = match self.credential {
+        let credential: &SignalCredential = match self.user.credential {
             Some(ref x) => x,
             None        => return Err(CredentialError::MissingData),
         };
-
-        let mut transcript = Transcript::new(b"SIGNAL SHOW");
-        let mut csprng = transcript.fork_transcript().reseed_from_rng(rng);
-
-        const N_ATTRIBUTES: usize = PRESENTATION_NUMBER_OF_HIDDEN_ATTRIBUTES;
-
-        // Rerandomise the aMAC to prevent trivial linkages.
-        //
-        // XXX do we want to pass in a merlin transcript instead of using the rng here?
-        let rerandomized_mac: amacs::Tag = amacs::Rerandomization::new(&mut csprng).apply_to_tag(&credential.mac);
-
-        let A = self.system_parameters.h;
-        let B = self.system_parameters.g;
-        let P = rerandomized_mac.nonce;
-        let Q = rerandomized_mac.mac;
-
-        // Commit to the rerandomised aMAC.
-        let zQ: Scalar = Scalar::random(&mut csprng);
-        let CQ: pedersen::Commitment = pedersen::Commitment::to(&Q, &zQ, &A);
-
-        // Commit to the hidden attributes.
-        let mut nonces: Vec<Scalar> = Vec::with_capacity(N_ATTRIBUTES);
-        let mut commitments: Vec<pedersen::Commitment> = Vec::with_capacity(N_ATTRIBUTES);
-
-        for attribute in credential.attributes.iter() {
-            let zi: Scalar = Scalar::random(&mut csprng);
-            let miP: RistrettoPoint = attribute * P;
-            let Cmi: pedersen::Commitment = pedersen::Commitment::to(&(attribute * P), &zi, &A);
-
-            nonces.push(zi);
-            commitments.push(Cmi);
-        }
-
-        // Calculate the error factor.
-        let mut V: RistrettoPoint = RistrettoPoint::identity();
-
-        for (index, zi) in nonces.iter().enumerate() {
-            V += &(zi * self.issuer_parameters.Xn[index]);
-        }
-        V -= &zQ * &A;
+        let (presentation, nonces) = self.user.show(rng)?;
 
         let roster_entry: RosterEntry = match self.roster_entry {
             None        => return Err(CredentialError::MissingData),
             Some(ref x) => x.clone(),
         };
-        let valid_credential_secrets = valid_credential::Secrets {
-            m0: &credential.attributes[0],
-            z0: &nonces[0],
-            minus_zQ: &-zQ,
-        };
-        let valid_credential_publics = valid_credential::Publics {
-            B: &self.system_parameters.g,
-            A: &self.system_parameters.h,
-            X0: &self.issuer_parameters.Xn[0],
-            P: &rerandomized_mac.nonce,
-            V: &V,
-            Cm0: &commitments[0].into(),
-        };
-        let valid_credential_proof = valid_credential::Proof::create(&mut transcript,
-                                                                     valid_credential_publics,
-                                                                     valid_credential_secrets);
-
         let mut roster_membership_transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
         let roster_membership_secrets = roster_membership::Secrets {
             m0: &credential.attributes[0],
@@ -244,10 +157,10 @@ impl SignalUser {
             nonce: &self.roster_entry_opening?,
         };
         let roster_membership_publics = roster_membership::Publics {
-            B: &self.system_parameters.g,
-            A: &self.system_parameters.h,
-            P: &rerandomized_mac.nonce,
-            Cm0: &commitments[0].into(),
+            B: &self.user.system_parameters.g,
+            A: &self.user.system_parameters.h,
+            P: &presentation.rerandomized_nonce.clone(),
+            Cm0: &presentation.attributes_blinded[0].into(),
             RosterEntryPhoneNumberCommitment: &roster_entry.committed_phone_number.0.into(),
         };
         let roster_membership_proof = roster_membership::Proof::create(&mut roster_membership_transcript,
@@ -255,11 +168,7 @@ impl SignalUser {
                                                                        roster_membership_secrets);
 
         Ok(SignalCredentialPresentation {
-            proof: valid_credential_proof,
-            rerandomized_mac_commitment: CQ,
-            rerandomized_nonce: rerandomized_mac.nonce,
-            revealed_attributes: Vec::with_capacity(0),
-            hidden_attributes: commitments,
+            presentation: presentation,
             roster_entry: roster_entry.clone(),
             roster_membership_proof: roster_membership_proof,
         })
@@ -289,8 +198,8 @@ impl SignalUser {
     //     let opening = Scalar::random(&mut csprng);
     //     let commitment = CommittedPhoneNumber::from_phone_number(&phone_number,
     //                                                              &opening,
-    //                                                              &self.system_parameters.g,
-    //                                                              &self.system_parameters.h);
+    //                                                              &self.user.system_parameters.g,
+    //                                                              &self.user.system_parameters.h);
     //     let roster_key = GroupRosterKey([1u8; 32]); // XXX
     //     self.roster_entry_opening = Some(roster_entry_opening);
     //     self.roster_entry = Some(RosterEntry::new(&committed_phone_number,
@@ -307,8 +216,8 @@ impl SignalUser {
     //         nonce: &self.roster_entry_opening?,
     //     };
     //     let publics: blind_attributes::Publics = blind_attributes::Publics {
-    //         B: &self.system_parameters.g,
-    //         A: &self.system_parameters.h,
+    //         B: &self.user.system_parameters.g,
+    //         A: &self.user.system_parameters.h,
     //         D: &key.public.into(),
     //         encrypted_attribute_0_0: &encrypted_phone_number.number.commitment,
     //         encrypted_attribute_0_1: &encrypted_phone_number.number.encryption,
@@ -342,11 +251,11 @@ impl SignalUser {
     //     let mut transcript = Transcript::new(b"SIGNAL BLIND ISSUE");
     // 
     //     let publics = blind_issuance::Publics {
-    //         B: &self.system_parameters.g,
-    //         A: &self.system_parameters.h,
-    //         X0: &self.issuer_parameters.Xn[0],
-    //         X1: &self.issuer_parameters.Xn[1],
-    //         X2: &self.issuer_parameters.Xn[2],
+    //         B: &self.user.system_parameters.g,
+    //         A: &self.user.system_parameters.h,
+    //         X0: &self.user.issuer_parameters.Xn[0],
+    //         X1: &self.user.issuer_parameters.Xn[1],
+    //         X2: &self.user.issuer_parameters.Xn[2],
     //         D: &key.public.into(),
     //         P: &issue.blinding_commitment,
     //         T0_0: &issue.auxiliary_commitments[0],

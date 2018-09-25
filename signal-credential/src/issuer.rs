@@ -7,26 +7,31 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-// We denote group elements with capital and scalars with lowercased names.
-#![allow(non_snake_case)]
-
-use amacs;
-pub use amacs::IssuerParameters;
-pub use amacs::SecretKey as IssuerSecretKey;
+use aeonflux::amacs::{self};
+use aeonflux::amacs::Tag;
+use aeonflux::amacs::IssuerParameters;
+use aeonflux::credential::Credential;
+use aeonflux::credential::CredentialIssuance;
+use aeonflux::credential::CredentialPresentation;
+use aeonflux::credential::CredentialRequest;
+use aeonflux::credential::EncryptedAttribute;
+use aeonflux::credential::RevealedAttribute;
+use aeonflux::errors::CredentialError;
+use aeonflux::issuer::Issuer;
+use aeonflux::issuer::IssuerSecretKey;
+use aeonflux::parameters::SystemParameters;
+use aeonflux::pedersen::{self, Commitment};
+use aeonflux::proofs::issuance_revealed;
+use aeonflux::proofs::valid_credential;
 
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::traits::Identity;
-
-use elgamal;
 
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
 use zkp::Transcript;
 
-use credential::EncryptedAttribute;
-use credential::RevealedAttribute;
 use credential::ISSUANCE_NUMBER_OF_HIDDEN_ATTRIBUTES;
 use credential::ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES;
 use credential::NUMBER_OF_ATTRIBUTES;
@@ -37,27 +42,18 @@ use credential::SignalCredentialIssuance;
 use credential::SignalCredentialRequest;
 use credential::SignalCredentialPresentation;
 use credential::VerifiedSignalCredential;
-use errors::CredentialError;
 use errors::RosterError;
-use parameters::SystemParameters;
 use phone_number::PhoneNumber;
 use proofs::blind_attributes;
 use proofs::blind_issuance;
-use proofs::issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
-use proofs::valid_credential;
 use roster::GroupMembershipLevel;
 use roster::GroupMembershipRoster;
 
 /// An issuer and honest verifier of `SignalCredential`s.
 pub struct SignalIssuer {
-    /// The issuer's secret key material.
-    key: IssuerSecretKey,
-    /// The issuer's public key material.
-    pub issuer_parameters: IssuerParameters,
-    /// The system parameters.  Users and issuers must agree on parameters.
-    pub system_parameters: SystemParameters,
+    pub issuer: Issuer,
 }
 
 impl SignalIssuer {
@@ -78,16 +74,8 @@ impl SignalIssuer {
     where
         R: RngCore + CryptoRng,
     {
-        let key: IssuerSecretKey = match secret_key {
-            None    => IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES, csprng),
-            Some(x) => x.clone(),
-        };
-        let issuer_parameters: IssuerParameters = key.get_issuer_parameters(&system_parameters.h);
-
-        SignalIssuer{
-            system_parameters: system_parameters,
-            issuer_parameters: issuer_parameters,
-            key: key,
+        SignalIssuer {
+            issuer: Issuer::new(system_parameters, secret_key, csprng),
         }
     }
 
@@ -127,19 +115,12 @@ impl SignalIssuer {
     where
         R: RngCore + CryptoRng,
     {
-        // Obtain our needed public and secret key material.
-        let X1: RistrettoPoint = match self.issuer_parameters.Xn.get(0) {
-            Some(x) => *x,
-            None => return Err(CredentialError::NoIssuerParameters),
-        };
-        let x1: Scalar = match self.key.xn.get(0) {
-            Some(x) => *x,
-            None => return Err(CredentialError::NoIssuerKey),
-        };
-
-        // Construct the credential attributes.
+        // Construct the phone number and check that it matches the attributes.
         let number: PhoneNumber = PhoneNumber::try_from_string(&request.phone_number)?;
-        let attributes: amacs::Message = number.into();
+
+        if number.0 != request.request.attributes_revealed[0] {
+            return Err(CredentialError::BadAttribute);
+        }
 
         // Create a transcript and feed the context into it
         let mut request_transcript = Transcript::new(b"SIGNAL ISSUANCE REQUEST");
@@ -149,8 +130,8 @@ impl SignalIssuer {
         let roster_entry_commitment_number = request.roster_entry.committed_phone_number;
 
         let revealed_attributes_publics: revealed_attributes::Publics = revealed_attributes::Publics {
-            g: &self.system_parameters.g,
-            h: &self.system_parameters.h,
+            g: &self.issuer.system_parameters.g,
+            h: &self.issuer.system_parameters.h,
             roster_entry_commitment_number: &roster_entry_commitment_number.0.into(),
         };
 
@@ -158,80 +139,15 @@ impl SignalIssuer {
             return Err(CredentialError::VerificationFailure);
         }
 
-        // Create a transcript and feed the context into it
-        let mut issuance_transcript = Transcript::new(b"SIGNAL ISSUANCE");
-
-        // Calculate (u, u'), i.e. (nonce, mac)
-        let tag: amacs::Tag = self.key.mac(&attributes, rng).or(Err(CredentialError::MacCreation))?;
-
-        // Choose a blinding factor, x~0
-        let mut csprng = issuance_transcript.fork_transcript().reseed_from_rng(rng);
-        let x0_tilde: Scalar = Scalar::random(rng);
-
-        // Construct a commitment to the issuer secret key
-        let Cx0: RistrettoPoint = (&self.system_parameters.g * &self.key.x0) +
-                                  (&self.system_parameters.h * &x0_tilde);
-        // XXX Could speed up the above by multiscalar_mul and generating a basepoint table
-
-        // Construct the NIZK proof of correct issuance
-        let secrets = issuance::Secrets {
-            x0: &self.key.x0,
-            x1: &x1,
-            x0_tilde: &x0_tilde,
-            m1x1: &(&attributes[0] * &x1),
-        };
-        let publics = issuance::Publics {
-            P: &tag.nonce,
-            Q: &tag.mac,
-            Cx0: &Cx0,
-            B: &self.system_parameters.g,
-            A: &self.system_parameters.h,
-            X1: &X1,
-        };
-        let proof: issuance::Proof = issuance::Proof::create(&mut issuance_transcript, publics, secrets);
-
-        let cred: SignalCredential = SignalCredential { mac: tag.clone(),
-                                                        attributes: attributes.into() };
-
-        Ok(SignalCredentialIssuance{
-            proof: proof,
-            credential: cred,
-            secret_key_commitment: Cx0,
-        })
+        self.issuer.issue(&request.request, rng)
     }
 
-    pub fn verify<'a>(&self, presentation: &'a SignalCredentialPresentation)
+    pub fn verify<'a>(&self, signal_presentation: &'a SignalCredentialPresentation)
         -> Result<VerifiedSignalCredential<'a>, CredentialError>
     {
-        let P = presentation.rerandomized_nonce;
+        self.issuer.verify(&signal_presentation.presentation)?;
 
-        // Recompute the MAC
-        let mut V_prime: RistrettoPoint = &self.key.x0 * &P;
-
-        for (index, attribute) in presentation.revealed_attributes.iter().enumerate() {
-            V_prime += (&self.key.xn[index] * attribute) * &P;
-        }
-
-        for (index, attribute) in presentation.hidden_attributes.iter().enumerate() {
-            V_prime += &self.key.xn[index] * attribute;
-        }
-        V_prime -= presentation.rerandomized_mac_commitment;
-
-        let mut transcript = Transcript::new(b"SIGNAL SHOW");
-        let publics = valid_credential::Publics {
-            B: &self.system_parameters.g,
-            A: &self.system_parameters.h,
-            X0: &self.issuer_parameters.Xn[0],
-            P: &P,
-            V: &V_prime,
-            Cm0: &presentation.hidden_attributes[0].clone().into(), // XXX remove clones
-        };
-
-        if presentation.proof.verify(&mut transcript, publics).is_err() {
-            return Err(CredentialError::MacVerification);
-        }
-
-        Ok(VerifiedSignalCredential(presentation))
+        Ok(VerifiedSignalCredential(signal_presentation))
     }
 
     pub fn verify_roster_membership(
@@ -260,19 +176,19 @@ impl SignalIssuer {
         }
 
         let publics = roster_membership::Publics {
-            B: &self.system_parameters.g,
-            A: &self.system_parameters.h,
-            P: &credential.0.rerandomized_nonce,
-            Cm0: &credential.0.hidden_attributes[0].clone().into(),
+            B: &self.issuer.system_parameters.g,
+            A: &self.issuer.system_parameters.h,
+            P: &credential.0.presentation.rerandomized_nonce,
+            Cm0: &credential.0.presentation.attributes_blinded[0].clone().into(),
             RosterEntryPhoneNumberCommitment: &credential.0.roster_entry.committed_phone_number.0.into(),
         };
         let mut transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
 
         if credential.0.roster_membership_proof.verify(&mut transcript, publics).is_ok() {
-            return Ok(());
+            Ok(())
+        } else {
+            Err(RosterError::InvalidProof)
         }
-
-        return Err(RosterError::InvalidProof);
     }
 }
 
@@ -280,7 +196,7 @@ impl SignalIssuer {
 mod test {
     use super::*;
 
-    use parameters::SystemParameters;
+    use aeonflux::parameters::SystemParameters;
     use rand::thread_rng;
     use roster::GroupMembershipRoster;
     use roster::GroupRosterKey;
@@ -305,7 +221,7 @@ mod test {
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key), &mut issuer_rng);
 
         // Get the issuer's parameters so we can advertise them to new users:
-        let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
+        let issuer_parameters: IssuerParameters = issuer.issuer.issuer_parameters.clone();
 
         // Create a couple users
         let alice_phone_number_input: &str = "14155551234";
@@ -391,8 +307,8 @@ impl SignalIssuer {
     //         }
     // 
     //         let publics: blind_attributes::Publics = blind_attributes::Publics {
-    //             B: &self.system_parameters.g,
-    //             A: &self.system_parameters.h,
+    //             B: &self.issuer.system_parameters.g,
+    //             A: &self.issuer.system_parameters.h,
     //             D: &request.public_key.into(),
     //             // The first two "attributes" are the commitment and encryption for the elGamal
     //             // encryption of the user's phone number.  These form one actual attribute, but
@@ -419,7 +335,7 @@ impl SignalIssuer {
     //     let b: Scalar = Scalar::random(&mut csprng);
     // 
     //     // Compute P = b * B (labelled "u" in CMZ'13, but "P" in LdV'17).
-    //     let P: RistrettoPoint = &self.system_parameters.g * &b; // XXX use basepoint table
+    //     let P: RistrettoPoint = &self.issuer.system_parameters.g * &b; // XXX use basepoint table
     // 
     //     // Compute a partial aMAC on the revealed attribute, if any exist.
     //     //
@@ -489,8 +405,8 @@ impl SignalIssuer {
     //     // Form some auxiliary commitments to hide secret products in the proofs:
     //     let t0: Scalar = &b * &self.key.xn[0];
     //     let t1: Scalar = &b * &self.key.xn[1];
-    //     let T0: RistrettoPoint = &t0 * &self.system_parameters.h;
-    //     let T1: RistrettoPoint = &t1 * &self.system_parameters.h;
+    //     let T0: RistrettoPoint = &t0 * &self.issuer.system_parameters.h;
+    //     let T1: RistrettoPoint = &t1 * &self.issuer.system_parameters.h;
     // 
     //     // Form a NIPK showing that we issued the credential correctly, the encrypted aMAC was
     //     // encrypted to the user's public key, the decryption of the encrypted aMAC was produced
@@ -508,11 +424,11 @@ impl SignalIssuer {
     //     };
     // 
     //     let publics = blind_issuance::Publics {
-    //         B: &self.system_parameters.g,
-    //         A: &self.system_parameters.h,
-    //         X0: &self.issuer_parameters.Xn[0],
-    //         X1: &self.issuer_parameters.Xn[1],
-    //         X2: &self.issuer_parameters.Xn[2],
+    //         B: &self.issuer.system_parameters.g,
+    //         A: &self.issuer.system_parameters.h,
+    //         X0: &self.issuer.issuer_parameters.Xn[0],
+    //         X1: &self.issuer.issuer_parameters.Xn[1],
+    //         X2: &self.issuer.issuer_parameters.Xn[2],
     //         D: &request.public_key.into(),
     //         P: &P,
     //         T0_0: &T0,

@@ -14,8 +14,6 @@ use curve25519_dalek::scalar::Scalar;
 
 use errors::RosterError;
 
-use pedersen;
-
 use phone_number::CommittedPhoneNumber;
 use phone_number::PhoneNumber;
 
