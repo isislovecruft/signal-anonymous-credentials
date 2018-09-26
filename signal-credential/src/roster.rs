@@ -41,7 +41,7 @@ impl RosterEntry {
         committed_phone_number: &CommittedPhoneNumber,
         phone_number: &PhoneNumber,
         nonce: &Scalar,
-        key: &GroupRosterKey,
+        _key: &GroupRosterKey,
     ) -> RosterEntry
     {
         // XXX Actually encrypt these with an AES key encrypted to the group key.
