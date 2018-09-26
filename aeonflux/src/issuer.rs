@@ -10,6 +10,7 @@
 use amacs;
 pub use amacs::SecretKey as IssuerSecretKey;
 
+use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
@@ -42,6 +43,29 @@ use proofs::valid_credential;
 #[repr(C)]
 pub struct IssuerParameters {
     pub Xn: Vec<RistrettoPoint>,
+}
+
+impl IssuerParameters {
+    pub fn from_bytes(bytes: &[u8]) -> Result<IssuerParameters, CredentialError> {
+        let length: usize = bytes.len();
+
+        // The bytes must be a multiple of 32.
+        if length % 32 != 0 {
+            return Err(CredentialError::MissingData);
+        }
+        let mut Xn: Vec<RistrettoPoint> = Vec::with_capacity(length % 32);
+
+        // When #![feature(chunk_exact)] stabilises we should use that instead
+        for chunk in bytes.chunks(32) {
+            let X: RistrettoPoint = match CompressedRistretto::from_slice(chunk).decompress() {
+                None    => return Err(CredentialError::NoIssuerParameters),
+                Some(x) => x,
+            };
+            Xn.push(X);
+        }
+
+        Ok(IssuerParameters { Xn })
+    }
 }
 
 /// An issuer and honest verifier of `Credential`s.
