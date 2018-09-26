@@ -10,23 +10,17 @@
 // We denote group elements with capital and scalars with lowercased names.
 #![allow(non_snake_case)]
 
-use amacs;
-use amacs::IssuerParameters;
-use amacs::SecretKey;
-
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
-
-use elgamal;
-
-use pedersen;
 
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
 use zkp::Transcript;
 
+use amacs;
+use amacs::SecretKey;
 use credential::Credential;
 use credential::CredentialBlindIssuance;
 use credential::CredentialBlindRequest;
@@ -35,8 +29,11 @@ use credential::CredentialPresentation;
 use credential::CredentialRequest;
 use credential::EncryptedAttribute;
 use credential::RevealedAttribute;
+use elgamal;
 use errors::CredentialError;
+use issuer::IssuerParameters;
 use parameters::SystemParameters;
+use pedersen;
 use proofs::attributes_blinded;
 use proofs::issuance_blinded;
 use proofs::issuance_revealed;
