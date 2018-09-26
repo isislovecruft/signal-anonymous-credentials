@@ -12,6 +12,7 @@ extern crate rand;
 extern crate signal_credential;
 
 use aeonflux::issuer::IssuerParameters;
+use aeonflux::issuer::IssuerSecretKey;
 use aeonflux::parameters::SystemParameters;
 use rand::thread_rng;
 use signal_credential::credential::*;
