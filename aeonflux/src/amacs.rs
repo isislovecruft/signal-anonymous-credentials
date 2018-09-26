@@ -141,6 +141,33 @@ impl SecretKey {
         SecretKey{ x0, xn }
     }
 
+    /// Construct this secret key from some `bytes`.
+    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, MacError> {
+        let length: usize = bytes.len();
+
+        // The bytes must be a multiple of 32.
+        if length % 32 != 0 {
+            return Err(MacError::MessageLengthError{ length });
+        }
+        let mut x0: Option<Scalar> = None;
+        let mut xn: Vec<Scalar> = Vec::with_capacity((length % 32) - 1);
+
+        // When #![feature(chunk_exact)] stabilises we should use that instead
+        for chunk in bytes.chunks(32) {
+            let x: RistrettoPoint = match CompressedRistretto::from_slice(chunk).decompress() {
+                None    => return Err(CredentialError::NoIssuerParameters),
+                Some(x) => x,
+            };
+            if x0.is_none() {
+                x0 = x;
+            } else {
+                xn.push(x);
+            }
+        }
+
+        Ok(SecretKey { x0, xn })
+    }
+
     /// Compute public issuer parameters for use with anonymous credentials.
     ///
     /// # Inputs
