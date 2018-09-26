@@ -43,30 +43,34 @@ fn credential_issuance_and_presentation() {
     let issuer_parameters: IssuerParameters = issuer.issuer.issuer_parameters.clone();
 
     // Create a couple users
-    let alice_phone_number_input: &str = "14155551234";
+    let alice_phone_number_input: String = String::from("14155551234");
     let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                 issuer_parameters.clone(),
                                                 None, // no encrypted attributes so the key isn't needed
-                                                String::from(alice_phone_number_input));
+                                                alice_phone_number_input.clone());
 
-    let bob_phone_number_input: &str = "14155556666";
+    let bob_phone_number_input: String = String::from("14155556666");
     let mut bob: SignalUser = SignalUser::new(system_parameters,
                                               issuer_parameters.clone(),
                                               None, // no encrypted attributes so the key isn't needed
-                                              String::from(bob_phone_number_input));
+                                              bob_phone_number_input.clone());
 
     // Form a request for a credential
     let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
 
     // Try to get the issuer to give Alice a new credential
-    let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
+    let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request,
+                                                                &alice_phone_number_input,
+                                                                &mut issuer_rng).unwrap();
 
     // Give the result back to Alice for processing
     alice.obtain_finish(Some(&alice_issuance));
         
     // And the same for Bob:
     let bob_request: SignalCredentialRequest = bob.obtain(&mut bob_rng).unwrap();
-    let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request, &mut issuer_rng).unwrap();
+    let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request,
+                                                              &bob_phone_number_input,
+                                                              &mut issuer_rng).unwrap();
 
     bob.obtain_finish(Some(&bob_issuance));
 

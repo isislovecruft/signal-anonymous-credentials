@@ -110,13 +110,17 @@ impl SignalIssuer {
     /// # Returns
     ///
     /// A `SignalCredentialRequest` upon successful issuance.
-    pub fn issue<R>(&self, request: &SignalCredentialRequest, rng: &mut R)
-        -> Result<SignalCredentialIssuance, CredentialError>
+    pub fn issue<R>(
+        &self,
+        request: &SignalCredentialRequest,
+        phone_number: &String,
+        rng: &mut R,
+    ) -> Result<SignalCredentialIssuance, CredentialError>
     where
         R: RngCore + CryptoRng,
     {
         // Construct the phone number and check that it matches the attributes.
-        let number: PhoneNumber = PhoneNumber::try_from_string(&request.phone_number)?;
+        let number: PhoneNumber = PhoneNumber::try_from_string(&phone_number)?;
 
         if number.0 != request.request.attributes_revealed[0] {
             return Err(CredentialError::BadAttribute);

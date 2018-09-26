@@ -72,7 +72,6 @@ pub struct SignalCredentialBlindIssuance {
 pub struct SignalCredentialRequest {
     pub request: CredentialRequest,
     pub proof: revealed_attributes::Proof,
-    pub phone_number: String,
     pub roster_entry: RosterEntry,
 }
 

@@ -119,7 +119,6 @@ impl SignalUser {
         Ok(SignalCredentialRequest {
             request: request,
             proof: proof,
-            phone_number: self.phone_number.clone(),
             roster_entry: roster_entry,
         })
     }

@@ -40,11 +40,11 @@ mod credential_benches {
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
         let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
-        let alice_phone_number_input: &str = "14155551234";
+        let alice_phone_number_input: String = String::new("14155551234");
         let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
-                                                    String::from(alice_phone_number_input));
+                                                    alice_phone_number_input);
 
         c.bench_function("step 0: credential request from client", move |b| {
             b.iter(|| alice.obtain(&mut alice_rng))
@@ -59,11 +59,11 @@ mod credential_benches {
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
         let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
-        let alice_phone_number_input: &str = "14155551234";
+        let alice_phone_number_input: String = String::new("14155551234");
         let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
-                                                    String::from(alice_phone_number_input));
+                                                    alice_phone_number_input);
         let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
 
         c.bench_function("step 1: credential issuance by server", move |b| {
@@ -79,13 +79,15 @@ mod credential_benches {
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
         let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
-        let alice_phone_number_input: &str = "14155551234";
+        let alice_phone_number_input: String = String::new("14155551234");
         let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
-                                                    String::from(alice_phone_number_input));
+                                                    alice_phone_number_input);
         let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request,
+                                                                    &alice_phone_number_input,
+                                                                    &mut issuer_rng).unwrap();
 
         c.bench_function("step 2: credential obtain by client", move |b| {
             b.iter(|| alice.obtain_finish(Some(&alice_issuance)))
@@ -100,13 +102,15 @@ mod credential_benches {
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
         let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
-        let alice_phone_number_input: &str = "14155551234";
+        let alice_phone_number_input: String = String::new("14155551234");
         let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
-                                                    String::from(alice_phone_number_input));
+                                                    alice_phone_number_input);
         let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request,
+                                                                    &alice_phone_number_input,
+                                                                    &mut issuer_rng).unwrap();
 
         alice.obtain_finish(Some(&alice_issuance));
 
@@ -123,13 +127,15 @@ mod credential_benches {
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
         let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
-        let alice_phone_number_input: &str = "14155551234";
+        let alice_phone_number_input: String = String::new("14155551234");
         let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
-                                                    String::from(alice_phone_number_input));
+                                                    alice_phone_number_input);
         let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request,
+                                                                    &alice_phone_number_input,
+                                                                    &mut issuer_rng).unwrap();
 
         alice.obtain_finish(Some(&alice_issuance));
 
@@ -149,24 +155,28 @@ mod credential_benches {
         let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES);
         let issuer: SignalIssuer = SignalIssuer::new(system_parameters, Some(&issuer_secret_key));
         let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
-        let alice_phone_number_input: &str = "14155551234";
+        let alice_phone_number_input: String = String::new("14155551234");
         let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                     issuer_parameters.clone(),
                                                     None, // no encrypted attributes so the key isn't needed
-                                                    String::from(alice_phone_number_input));
+                                                    alice_phone_number_input);
         let alice_request: SignalCredentialRequest = alice.obtain(&mut alice_rng).unwrap();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request,
+                                                                    &alice_phone_number_input,
+                                                                    &mut issuer_rng).unwrap();
 
         alice.obtain_finish(Some(&alice_issuance));
 
         // Pretend that Bob had previously made a Signal group with a key:
-        let bob_phone_number_input: &str = "14155556666";
+        let bob_phone_number_input: String = String::new("14155556666");
         let mut bob: SignalUser = SignalUser::new(system_parameters,
                                                   issuer_parameters.clone(),
                                                   None, // no encrypted attributes so the key isn't needed
-                                                  String::from(bob_phone_number_input));
+                                                  bob_phone_number_input);
         let bob_request: SignalCredentialRequest = bob.obtain(&mut bob_rng).unwrap();
-        let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request, &mut issuer_rng).unwrap();
+        let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request,
+                                                                  &bob_phone_number_input,
+                                                                  &mut issuer_rng).unwrap();
 
         bob.obtain_finish(Some(&bob_issuance));
 
