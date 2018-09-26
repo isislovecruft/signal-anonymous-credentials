@@ -55,8 +55,7 @@ impl RosterEntry {
         }
     }
 
-    pub fn open(&self, key: &GroupRosterKey) {
-        // XXX
+    pub fn open(&self, _key: &GroupRosterKey) {
         unimplemented!()
     }
 }
