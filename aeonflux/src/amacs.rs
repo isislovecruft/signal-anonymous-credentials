@@ -41,6 +41,8 @@ use sha2::Sha512;
 
 use errors::MacError;
 
+pub use issuer::IssuerParameters;
+
 /// A `Message` is a vector of `Scalar`s in \( \mathbb{Z}/\mathbb{Z}\ell \).
 #[derive(Clone, Debug)]
 #[repr(C)]
@@ -102,14 +104,6 @@ impl Index<usize> for Message {
 pub struct Tag {
     pub nonce: RistrettoPoint,
     pub mac: RistrettoPoint,
-}
-
-#[doc(hidden)]
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[allow(non_snake_case)]
-#[repr(C)]
-pub struct IssuerParameters {
-    pub Xn: Vec<RistrettoPoint>,
 }
 
 /// A secret key for authenticating and verifying `Tag`s.

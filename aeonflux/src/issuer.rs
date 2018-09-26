@@ -8,7 +8,6 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
 use amacs;
-pub use amacs::IssuerParameters;
 pub use amacs::SecretKey as IssuerSecretKey;
 
 use curve25519_dalek::ristretto::RistrettoPoint;
@@ -37,6 +36,13 @@ use proofs::attributes_blinded;
 use proofs::issuance_blinded;
 use proofs::issuance_revealed;
 use proofs::valid_credential;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(non_snake_case)]
+#[repr(C)]
+pub struct IssuerParameters {
+    pub Xn: Vec<RistrettoPoint>,
+}
 
 /// An issuer and honest verifier of `Credential`s.
 pub struct Issuer {
