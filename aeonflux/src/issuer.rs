@@ -13,7 +13,6 @@ pub use amacs::SecretKey as IssuerSecretKey;
 use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::traits::Identity;
 
 use elgamal;
 
