@@ -67,6 +67,8 @@ pub struct SignalCredentialBlindIssuance {
     pub issuance: CredentialBlindIssuance,
 }
 
+#[derive(Deserialize, Serialize)]
+#[repr(C)]
 pub struct SignalCredentialRequest {
     pub request: CredentialRequest,
     pub proof: revealed_attributes::Proof,
@@ -76,6 +78,7 @@ pub struct SignalCredentialRequest {
 
 pub type SignalCredentialIssuance = CredentialIssuance;
 
+#[derive(Deserialize, Serialize)]
 #[derive(Clone)]
 pub struct SignalCredentialPresentation {
     pub presentation: CredentialPresentation,

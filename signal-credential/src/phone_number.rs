@@ -30,7 +30,7 @@ use errors::PhoneNumberError;
 /// To disambiguate numbers which may have significant leading zeros in some
 /// countries and/or regions, we prefix the bytes of the scalar with
 /// `0x15`s. These `0x15`s are not part of the `number`.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 #[repr(C)]
 pub struct PhoneNumber(pub Scalar);
 
@@ -186,7 +186,7 @@ impl PhoneNumber {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct EncryptedPhoneNumber(pub elgamal::Encryption);
 
 impl From<EncryptedPhoneNumber> for Vec<EncryptedAttribute> {
@@ -199,7 +199,7 @@ impl From<EncryptedPhoneNumber> for Vec<EncryptedAttribute> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct CommittedPhoneNumber(pub pedersen::Commitment);
 
 impl CommittedPhoneNumber {

@@ -22,11 +22,11 @@ use phone_number::PhoneNumber;
 ///
 // XXX Fix me, this should be an AES-256 key, but I don't know what type it is
 //     without figuring out which AES library to use.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct GroupRosterKey(pub [u8; 32]);
 
 /// A single `SignalUser`'s roster entry in a `GroupMembershipRoster`.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct RosterEntry {
     pub committed_phone_number: CommittedPhoneNumber,
     /// The following are ciphertexts are required for other group members to
