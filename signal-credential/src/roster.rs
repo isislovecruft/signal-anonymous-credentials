@@ -60,7 +60,7 @@ impl RosterEntry {
     }
 }
 
-/// A roster of members and privileges for a signal Signal group.
+/// A roster of members and privileges for a Signal group.
 ///
 /// # Note
 ///
