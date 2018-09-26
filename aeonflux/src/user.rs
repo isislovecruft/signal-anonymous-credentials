@@ -173,8 +173,8 @@ impl User {
             minus_zQ: &-zQ,
         };
         let valid_credential_publics = valid_credential::Publics {
-            B: &self.system_parameters.g,
-            A: &self.system_parameters.h,
+            B: &B,
+            A: &A,
             X0: &self.issuer_parameters.Xn[0],
             P: &rerandomized_mac.nonce,
             V: &V,
