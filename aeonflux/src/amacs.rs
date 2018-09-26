@@ -44,7 +44,7 @@ use errors::MacError;
 pub use issuer::IssuerParameters;
 
 /// A `Message` is a vector of `Scalar`s in \( \mathbb{Z}/\mathbb{Z}\ell \).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[repr(C)]
 pub struct Message(pub Vec<Scalar>);
 
@@ -99,7 +99,7 @@ impl Index<usize> for Message {
 }
 
 /// A `Tag` for an authenticated `Message`.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 #[repr(C)]
 pub struct Tag {
     pub nonce: RistrettoPoint,
@@ -107,7 +107,7 @@ pub struct Tag {
 }
 
 /// A secret key for authenticating and verifying `Tag`s.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[repr(C)]
 pub struct SecretKey {
     pub x0: Scalar,

@@ -17,7 +17,7 @@ use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
 /// A Pedersen commitment.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Commitment(RistrettoPoint);
 
 impl From<Commitment> for RistrettoPoint {

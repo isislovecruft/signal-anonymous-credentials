@@ -33,7 +33,8 @@ pub type EncryptedAttribute = elgamal::Encryption;
 
 /// An anonymous credential belonging to a user and issued and verified
 /// by an issuer.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[repr(C)]
 pub struct Credential {
     /// The non-interactive zero knowledge proof that this credential is
     /// well-formed.
@@ -48,6 +49,8 @@ pub struct Credential {
 /// attributes, they must be accompanied by a proof that they are correctly
 /// formed with respect to the `User`'s `public_key, an elGamal encryption
 /// public key.
+#[derive(Deserialize, Serialize)]
+#[repr(C)]
 pub struct CredentialBlindRequest {
     /// An optional vector of credential attributes which are revealed to the issuer.
     pub attributes_revealed: Option<Vec<RevealedAttribute>>,
@@ -65,6 +68,8 @@ pub struct CredentialBlindRequest {
 }
 
 /// An blinded issuance of a `Credential`.
+#[derive(Deserialize, Serialize)]
+#[repr(C)]
 pub struct CredentialBlindIssuance {
     pub proof: issuance_blinded::Proof,
     pub blinding_commitment: RistrettoPoint,
@@ -76,17 +81,22 @@ pub struct CredentialBlindIssuance {
     pub encrypted_attributes: Vec<EncryptedAttribute>,
 }
 
+#[derive(Deserialize, Serialize)]
+#[repr(C)]
 pub struct CredentialRequest {
     pub attributes_revealed: Vec<RevealedAttribute>,
 }
 
+#[derive(Deserialize, Serialize)]
+#[repr(C)]
 pub struct CredentialIssuance {
     pub proof: issuance_revealed::Proof,
     pub credential: Credential,
     pub secret_key_commitment: RistrettoPoint,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
+#[repr(C)]
 pub struct CredentialPresentation {
     /// A zero-knowledge proof showing that the user knows a valid rerandomised
     /// algebraic MAC over the `attributes_revealed` and `attributes_blinded`
@@ -111,4 +121,5 @@ pub struct CredentialPresentation {
 /// to only be callable if the issuer has previously successfully called
 /// `Issuer.verify()`.
 #[derive(Clone)]
+#[repr(C)]
 pub struct VerifiedCredential<'a>(pub &'a CredentialPresentation);

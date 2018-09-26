@@ -23,13 +23,13 @@ use curve25519_dalek::scalar::Scalar;
 use rand_core::CryptoRng;
 use rand_core::RngCore;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct PublicKey(pub(crate) RistrettoPoint);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SecretKey(pub(crate) Scalar);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Keypair {
     pub secret: SecretKey,
     pub public: PublicKey,
@@ -49,6 +49,7 @@ pub struct Keypair {
 /// we are able to map scalars to group elements by simply multiplying them by
 /// the basepoint, which is obviously not invertible but works for the
 /// algebraic-MAC-based anonymous credential blind issuance use-case.
+#[derive(Deserialize, Serialize)]
 pub struct Message(pub(crate) RistrettoPoint);
 
 impl<'a> From<&'a Scalar> for Message {
@@ -57,7 +58,7 @@ impl<'a> From<&'a Scalar> for Message {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Encryption {
     pub commitment: RistrettoPoint,
     pub encryption: RistrettoPoint,
