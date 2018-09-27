@@ -104,6 +104,36 @@ pub struct Tag {
     pub mac: RistrettoPoint,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[allow(non_snake_case)]
+#[repr(C)]
+pub struct PublicKey {
+    pub Xn: Vec<RistrettoPoint>,
+}
+
+impl PublicKey {
+    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, CredentialError> {
+        let length: usize = bytes.len();
+
+        // The bytes must be a multiple of 32.
+        if length % 32 != 0 {
+            return Err(CredentialError::MissingData);
+        }
+        let mut Xn: Vec<RistrettoPoint> = Vec::with_capacity(length % 32);
+
+        // When #![feature(chunk_exact)] stabilises we should use that instead
+        for chunk in bytes.chunks(32) {
+            let X: RistrettoPoint = match CompressedRistretto::from_slice(chunk).decompress() {
+                None    => return Err(CredentialError::NoIssuerParameters),
+                Some(x) => x,
+            };
+            Xn.push(X);
+        }
+
+        Ok(PublicKey { Xn })
+    }
+}
+
 /// A secret key for authenticating and verifying `Tag`s.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[repr(C)]
@@ -172,14 +202,14 @@ impl SecretKey {
     ///
     /// * `h`, a distinguished basepoint orthogonal to the `RISTRETTO_BASEPOINT_POINT`.
     #[allow(non_snake_case)]
-    pub fn get_issuer_parameters(&self, h: &RistrettoPoint) -> IssuerParameters {
+    pub fn get_public_key(&self, h: &RistrettoPoint) -> PublicKey {
         let mut Xn: Vec<RistrettoPoint> = Vec::with_capacity(self.xn.len());
 
         for xi in self.xn.iter() {
             Xn.push(h * xi);
         }
 
-        IssuerParameters{ Xn }
+        PublicKey { Xn }
     }
 
     pub fn mac<R>(&self, message: &Message, csprng: &mut R) -> Result<Tag, MacError>
@@ -217,6 +247,24 @@ impl SecretKey {
         } else {
             Err(MacError::AuthenticationError)
         }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Keypair {
+    pub public: PublicKey,
+    pub secret: SecretKey,
+}
+
+impl Keypair {
+    pub fn new<R>(h: &RistrettoPoint, csprng: &mut R) -> Keypair
+    where
+        R: RngCore + CryptoRng,
+    {
+        let secret = SecretKey::new(NUMBER_OF_ATTRIBUTES, csprng);
+        let public = secret_key.get_public_key(&h);
+
+        Keypair { public, secret }
     }
 }
 

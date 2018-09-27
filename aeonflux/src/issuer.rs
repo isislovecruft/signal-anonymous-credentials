@@ -8,6 +8,7 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
 use amacs;
+pub use amacs::PublicKey as IssuerParameters;
 pub use amacs::SecretKey as IssuerSecretKey;
 
 use curve25519_dalek::ristretto::CompressedRistretto;
@@ -37,42 +38,11 @@ use proofs::issuance_blinded;
 use proofs::issuance_revealed;
 use proofs::valid_credential;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[allow(non_snake_case)]
-#[repr(C)]
-pub struct IssuerParameters {
-    pub Xn: Vec<RistrettoPoint>,
-}
-
-impl IssuerParameters {
-    pub fn from_bytes(bytes: &[u8]) -> Result<IssuerParameters, CredentialError> {
-        let length: usize = bytes.len();
-
-        // The bytes must be a multiple of 32.
-        if length % 32 != 0 {
-            return Err(CredentialError::MissingData);
-        }
-        let mut Xn: Vec<RistrettoPoint> = Vec::with_capacity(length % 32);
-
-        // When #![feature(chunk_exact)] stabilises we should use that instead
-        for chunk in bytes.chunks(32) {
-            let X: RistrettoPoint = match CompressedRistretto::from_slice(chunk).decompress() {
-                None    => return Err(CredentialError::NoIssuerParameters),
-                Some(x) => x,
-            };
-            Xn.push(X);
-        }
-
-        Ok(IssuerParameters { Xn })
-    }
-}
 
 /// An issuer and honest verifier of `Credential`s.
 pub struct Issuer {
-    /// The issuer's secret key material.
-    key: IssuerSecretKey,
-    /// The issuer's public key material.
-    pub issuer_parameters: IssuerParameters,
+    /// The issuer's aMAC key material.
+    keypair: amacs::Keypair,
     /// The system parameters.  Users and issuers must agree on parameters.
     pub system_parameters: SystemParameters,
 }
@@ -80,34 +50,40 @@ pub struct Issuer {
 const NUMBER_OF_ATTRIBUTES: usize = 1;
 
 impl Issuer {
-    /// Create a new `Issuer` from some agreed upon `system_parameters`
-    /// and an optional `secret_key`.
+    /// Create a new `Issuer` from some agreed upon `system_parameters`.
+    ///
+    /// This will create an entirely new issuer with new key material.  For
+    /// instantiating an `Issuer` from previously generated key material, use
+    /// `Issuer::new()`.
     ///
     /// # Inputs
     ///
     /// * `system_parameters` are a set of `SystemParameters` containing the
     ///   distinguished basepoints, `G` and `H`.
-    /// * `secret_key` is an `Option<&IssuerSecretKey>`.  If `None`, a new
-    ///   `IssuerSecretKey` will be created.
-    pub fn new<R>(
+    pub fn create<R>(
         system_parameters: SystemParameters,
-        secret_key: Option<&IssuerSecretKey>,
         csprng: &mut R,
     ) -> Self
     where
         R: RngCore + CryptoRng,
     {
-        let key: IssuerSecretKey = match secret_key {
-            None    => IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES, csprng),
-            Some(x) => x.clone(),
-        };
-        let issuer_parameters: IssuerParameters = key.get_issuer_parameters(&system_parameters.h);
+        let keypair: amacs::Keypair::new(system_parameters.h, csprng);
 
-        Issuer {
-            system_parameters: system_parameters,
-            issuer_parameters: issuer_parameters,
-            key: key,
-        }
+        Issuer { system_parameters, keypair }
+    }
+
+    /// Initialize an `Issuer`.
+    pub fn new(
+        system_parameters: SystemParameters,
+        keypair: amacs::Keypair,
+    ) -> Self
+    {
+        Issuer { system_parameters, keypair }
+    }
+
+    /// Get this `Issuer`s parameters for publishing to users.
+    pub fn get_issuer_parameters(&self) -> IssuerParameters {
+        self.keypair.public
     }
 
     /// Unblinded credential issuance.
@@ -127,7 +103,7 @@ impl Issuer {
     /// This method may return the following errors:
     ///
     /// * `CredentialError::NoIssuerParameters` if this `Issuer`'s
-    ///   `issuer_parameters` didn't contain the correct length of public key.
+    ///   `keypair.public` didn't contain the correct length of public key.
     /// * `CredentialError::NoIssuerKey` if this `Issuer`'s secret `key`
     ///   was not the correct length.
     ///
@@ -140,7 +116,7 @@ impl Issuer {
         R: RngCore + CryptoRng,
     {
         // Obtain our needed public and secret key material.
-        let X1: RistrettoPoint = match self.issuer_parameters.Xn.get(0) {
+        let X1: RistrettoPoint = match self.keypair.public.Xn.get(0) {
             Some(x) => *x,
             None => return Err(CredentialError::NoIssuerParameters),
         };
@@ -216,7 +192,7 @@ impl Issuer {
         let publics = valid_credential::Publics {
             B: &self.system_parameters.g,
             A: &self.system_parameters.h,
-            X0: &self.issuer_parameters.Xn[0],
+            X0: &self.keypair.public.Xn[0],
             P: &P,
             V: &V_prime,
             Cm0: &presentation.attributes_blinded[0].into(),
@@ -255,7 +231,7 @@ mod test {
         let issuer: Issuer = Issuer::new(system_parameters, Some(&issuer_secret_key), &mut issuer_rng);
 
         // Get the issuer's parameters so we can advertise them to new users:
-        let issuer_parameters: IssuerParameters = issuer.issuer_parameters.clone();
+        let issuer_parameters: IssuerParameters = issuer.get_issuer_parameters();
 
         // Create a user
         let mut alice: User = User::new(system_parameters,
