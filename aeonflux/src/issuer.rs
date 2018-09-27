@@ -38,6 +38,7 @@ use proofs::issuance_blinded;
 use proofs::issuance_revealed;
 use proofs::valid_credential;
 
+const NUMBER_OF_ATTRIBUTES: usize = 1;
 
 /// An issuer and honest verifier of `Credential`s.
 pub struct Issuer {
@@ -46,8 +47,6 @@ pub struct Issuer {
     /// The system parameters.  Users and issuers must agree on parameters.
     pub system_parameters: SystemParameters,
 }
-
-const NUMBER_OF_ATTRIBUTES: usize = 1;
 
 impl Issuer {
     /// Create a new `Issuer` from some agreed upon `system_parameters`.
