@@ -57,25 +57,34 @@ pub struct SignalIssuer {
 }
 
 impl SignalIssuer {
-    /// Create a new `SignalIssuer` from some agreed upon `system_parameters`
-    /// and an optional `secret_key`.
-    ///
-    /// # Inputs
-    ///
-    /// * `system_parameters` are a set of `SystemParameters` containing the
-    ///   distinguished basepoints, `G` and `H`.
-    /// * `secret_key` is an `Option<&IssuerSecretKey>`.  If `None`, a new
-    ///   `IssuerSecretKey` will be created.
-    pub fn new<R>(
+    /// Create a new `SignalIssuer` with new key material.
+    pub fn create<R>(
         system_parameters: SystemParameters,
-        secret_key: Option<&IssuerSecretKey>,
         csprng: &mut R,
     ) -> Self
     where
         R: RngCore + CryptoRng,
     {
         SignalIssuer {
-            issuer: Issuer::new(system_parameters, secret_key, csprng),
+            issuer: Issuer::create(system_parameters, csprng),
+        }
+    }
+
+    /// Initialise a new `SignalIssuer` from some agreed upon `system_parameters` and a
+    /// `keypair`.
+    ///
+    /// # Inputs
+    ///
+    /// * `system_parameters` are a set of `SystemParameters` containing the
+    ///   distinguished basepoints, `G` and `H`.
+    /// * `keypair` is an `amacs::Keypair`.
+    pub fn new(
+        system_parameters: SystemParameters,
+        keypair: amacs::Keypair,
+    ) -> Self
+    {
+        SignalIssuer {
+            issuer: Issuer::new(system_parameters, keypair),
         }
     }
 
