@@ -26,7 +26,7 @@ use rand_core::RngCore;
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct PublicKey(pub(crate) RistrettoPoint);
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct SecretKey(pub(crate) Scalar);
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -156,6 +156,13 @@ impl SecretKey {
 impl From<SecretKey> for Scalar {
     fn from(secret: SecretKey) -> Scalar {
         secret.0
+    }
+}
+
+/// Overwrite secret key material with null bytes when it goes out of scope.
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        self.0.clear();
     }
 }
 
