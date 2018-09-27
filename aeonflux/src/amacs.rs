@@ -41,8 +41,6 @@ use sha2::Sha512;
 
 use errors::MacError;
 
-pub use issuer::IssuerParameters;
-
 /// A `Message` is a vector of `Scalar`s in \( \mathbb{Z}/\mathbb{Z}\ell \).
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[repr(C)]
