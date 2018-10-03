@@ -41,7 +41,6 @@ pub struct User {
     pub issuer_parameters: IssuerParameters,
     pub key: Option<elgamal::Keypair>,
     pub credential: Option<Credential>,
-    pub transcript: Option<Transcript>,
 }
 
 impl User {
@@ -57,7 +56,6 @@ impl User {
             issuer_parameters: issuer_parameters,
             key: key,
             credential: None,
-            transcript: None,
         }
     }
 
@@ -105,7 +103,6 @@ impl User {
             Err(CredentialError::CredentialIssuance)
         } else {
             self.credential = Some(issue.credential.clone());
-            self.transcript = None;
 
             Ok(())
         }
