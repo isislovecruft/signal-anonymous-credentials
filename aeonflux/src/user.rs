@@ -35,6 +35,7 @@ use proofs::issuance_revealed;
 use proofs::valid_credential;
 
 /// DOCDOC
+#[derive(Deserialize, Serialize)]
 pub struct User {
     pub system_parameters: SystemParameters,
     pub issuer_parameters: IssuerParameters,

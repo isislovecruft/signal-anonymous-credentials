@@ -27,7 +27,7 @@ use curve25519_dalek::scalar::Scalar;
 ///
 //
 // DOCDOC fix above to use latex
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct SystemParameters {
     pub g: RistrettoPoint,
     pub h: RistrettoPoint,

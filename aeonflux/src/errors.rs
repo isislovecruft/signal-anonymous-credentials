@@ -12,7 +12,7 @@ use std::fmt;
 use std::fmt::Display;
 use std::option::NoneError;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub enum MacError {
     PointDecompressionError,
     ScalarFormatError,
@@ -41,7 +41,7 @@ impl Display for MacError {
 
 impl ::failure::Fail for MacError {}
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub enum CredentialError {
     BadAttribute,
     CredentialIssuance,

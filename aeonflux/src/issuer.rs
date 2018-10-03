@@ -32,6 +32,8 @@ use proofs::valid_credential;
 const NUMBER_OF_ATTRIBUTES: usize = 1;
 
 /// An issuer and honest verifier of `Credential`s.
+#[derive(Deserialize, Serialize)]
+#[repr(C)]
 pub struct Issuer {
     /// The issuer's aMAC key material.
     keypair: amacs::Keypair,
