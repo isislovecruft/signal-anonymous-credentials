@@ -20,14 +20,10 @@ use rand_core::CryptoRng;
 use zkp::Transcript;
 
 use amacs;
-use amacs::SecretKey;
 use credential::Credential;
-use credential::CredentialBlindIssuance;
-use credential::CredentialBlindRequest;
 use credential::CredentialIssuance;
 use credential::CredentialPresentation;
 use credential::CredentialRequest;
-use credential::EncryptedAttribute;
 use credential::RevealedAttribute;
 use elgamal;
 use errors::CredentialError;
@@ -35,8 +31,6 @@ use issuer::IssuerParameters;
 use nonces::Nonces;
 use parameters::SystemParameters;
 use pedersen;
-use proofs::attributes_blinded;
-use proofs::issuance_blinded;
 use proofs::issuance_revealed;
 use proofs::valid_credential;
 

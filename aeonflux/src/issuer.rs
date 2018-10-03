@@ -11,30 +11,21 @@ use amacs;
 pub use amacs::PublicKey as IssuerParameters;
 pub use amacs::SecretKey as IssuerSecretKey;
 
-use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
-
-use elgamal;
 
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
 use zkp::Transcript;
 
-use credential::EncryptedAttribute;
-use credential::RevealedAttribute;
 use credential::Credential;
-use credential::CredentialBlindIssuance;
-use credential::CredentialBlindRequest;
 use credential::CredentialIssuance;
 use credential::CredentialRequest;
 use credential::CredentialPresentation;
 use credential::VerifiedCredential;
 use errors::CredentialError;
 use parameters::SystemParameters;
-use proofs::attributes_blinded;
-use proofs::issuance_blinded;
 use proofs::issuance_revealed;
 use proofs::valid_credential;
 

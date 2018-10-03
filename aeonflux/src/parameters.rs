@@ -7,7 +7,6 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-use curve25519_dalek::constants::BASEPOINT_ORDER;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 use curve25519_dalek::ristretto::RistrettoPoint;
