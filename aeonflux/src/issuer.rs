@@ -34,7 +34,7 @@ use proofs::valid_credential;
 #[repr(C)]
 pub struct Issuer {
     /// The issuer's aMAC key material.
-    keypair: amacs::Keypair,
+    pub keypair: amacs::Keypair,
     /// The system parameters.  Users and issuers must agree on parameters.
     pub system_parameters: SystemParameters,
 }
