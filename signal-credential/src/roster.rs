@@ -23,10 +23,12 @@ use phone_number::PhoneNumber;
 // XXX Fix me, this should be an AES-256 key, but I don't know what type it is
 //     without figuring out which AES library to use.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[repr(C)]
 pub struct GroupRosterKey(pub [u8; 32]);
 
 /// A single `SignalUser`'s roster entry in a `GroupMembershipRoster`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[repr(C)]
 pub struct RosterEntry {
     pub committed_phone_number: CommittedPhoneNumber,
     /// The following are ciphertexts are required for other group members to
@@ -67,6 +69,7 @@ impl RosterEntry {
 /// The basepoint used in the commitments here must be the system parameter `h`,
 /// as used for the `SignalIssuer` and the `SignalUser` types.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[repr(C)]
 pub struct GroupMembershipRoster {
     /// The `key` is an AES key which is encrypted to the shared group key.
     key: GroupRosterKey,

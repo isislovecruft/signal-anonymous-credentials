@@ -9,7 +9,6 @@
 
 use aeonflux::amacs::{self};
 use aeonflux::amacs::Tag;
-use aeonflux::amacs::IssuerParameters;
 use aeonflux::credential::Credential;
 use aeonflux::credential::CredentialIssuance;
 use aeonflux::credential::CredentialPresentation;
@@ -18,6 +17,7 @@ use aeonflux::credential::EncryptedAttribute;
 use aeonflux::credential::RevealedAttribute;
 use aeonflux::errors::CredentialError;
 use aeonflux::issuer::Issuer;
+use aeonflux::issuer::IssuerParameters;
 use aeonflux::issuer::IssuerSecretKey;
 use aeonflux::parameters::SystemParameters;
 use aeonflux::pedersen::{self, Commitment};
@@ -52,6 +52,8 @@ use roster::GroupMembershipLevel;
 use roster::GroupMembershipRoster;
 
 /// An issuer and honest verifier of `SignalCredential`s.
+#[derive(Deserialize, Serialize)]
+#[repr(C)]
 pub struct SignalIssuer {
     pub issuer: Issuer,
 }
@@ -127,14 +129,14 @@ impl SignalIssuer {
     pub fn issue<R>(
         &self,
         request: &SignalCredentialRequest,
-        phone_number: &String,
+        phone_number: &[u8],
         rng: &mut R,
     ) -> Result<SignalCredentialIssuance, CredentialError>
     where
         R: RngCore + CryptoRng,
     {
         // Construct the phone number and check that it matches the attributes.
-        let number: PhoneNumber = PhoneNumber::try_from_string(&phone_number)?;
+        let number: PhoneNumber = PhoneNumber::try_from_bytes(&phone_number)?;
 
         if number.0 != request.request.attributes_revealed[0] {
             return Err(CredentialError::BadAttribute);
@@ -290,7 +292,7 @@ impl SignalIssuer {
     //         QHc = &self.key.x0 * &P;
     // 
     //         for (index, attribute) in revealed_attributes.iter().enumerate() {
-    //             let key: Scalar = self.key.xn[index];
+    //             let key: Scalar = self.keypair.secret.xn[index];
     //             QHc += attribute * &(&P * &key);
     //         }
     //     }
@@ -319,7 +321,7 @@ impl SignalIssuer {
     //     // XXX Again, benchmarks needed here, for the same reason as above.
     //     if encrypted_attributes.len() > 0 {
     //         for (index, attribute) in encrypted_attributes.iter().enumerate() {
-    //             EQH.encryption += attribute.encryption * &(&self.key.xn[index] * &b);
+    //             EQH.encryption += attribute.encryption * &(&self.keypair.secret.xn[index] * &b);
     //         }
     //     }
     // 
@@ -336,8 +338,8 @@ impl SignalIssuer {
     //     let x0_tilde: Scalar = Scalar::random(&mut csprng);
     // 
     //     // Form some auxiliary commitments to hide secret products in the proofs:
-    //     let t0: Scalar = &b * &self.key.xn[0];
-    //     let t1: Scalar = &b * &self.key.xn[1];
+    //     let t0: Scalar = &b * &self.keypair.secret.xn[0];
+    //     let t1: Scalar = &b * &self.keypair.secret.xn[1];
     //     let T0: RistrettoPoint = &t0 * &self.issuer.system_parameters.h;
     //     let T1: RistrettoPoint = &t1 * &self.issuer.system_parameters.h;
     // 
@@ -348,8 +350,8 @@ impl SignalIssuer {
     //     let secrets = blind_issuance::Secrets {
     //         x0_tilde: &x0_tilde,
     //         x0: &self.key.x0,
-    //         x1: &self.key.xn[0],
-    //         x2: &self.key.xn[1],
+    //         x1: &self.keypair.secret.xn[0],
+    //         x2: &self.keypair.secret.xn[1],
     //         s: &s,
     //         b: &b,
     //         t0: &t0,

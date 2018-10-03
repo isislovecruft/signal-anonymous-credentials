@@ -11,12 +11,12 @@
 #![allow(non_snake_case)]
 
 use aeonflux::amacs::{self, Tag};
-use aeonflux::amacs::IssuerParameters;
 use aeonflux::credential::CredentialPresentation;
 use aeonflux::credential::CredentialRequest;
 use aeonflux::credential::EncryptedAttribute;
 use aeonflux::elgamal::{self};
 use aeonflux::errors::CredentialError;
+use aeonflux::issuer::IssuerParameters;
 use aeonflux::parameters::SystemParameters;
 use aeonflux::pedersen::{self, Commitment};
 use aeonflux::user::User;
@@ -49,83 +49,87 @@ use roster::GroupRosterKey;
 use roster::RosterEntry;
 
 /// DOCDOC
+#[derive(Deserialize, Serialize)]
 pub struct SignalUser {
     pub user: User,
-    pub roster_entry: Option<RosterEntry>,
-    roster_entry_opening: Option<Scalar>,
-    phone_number: String,
+    pub roster_entry: RosterEntry,
+    roster_entry_opening: Scalar,
+    phone_number: PhoneNumber,
 }
 
 impl SignalUser {
     /// DOCDOC
-    pub fn new(
+    pub fn new<R>(
         system_parameters: SystemParameters,
         issuer_parameters: IssuerParameters,
         key: Option<elgamal::Keypair>,
-        phone_number: String,
-    ) -> SignalUser
+        phone_number: &[u8],
+        csprng: &mut R,
+    ) -> Result<SignalUser, CredentialError>
+    where
+        R: RngCore + CryptoRng,
     {
         let user = User::new(system_parameters, issuer_parameters, key);
 
-        SignalUser {
+        // Map our phone number to a scalar mod ell.
+        let number: PhoneNumber = PhoneNumber::try_from_bytes(&phone_number)?;
+
+        let transcript = Transcript::new(b"SIGNAL USER NEW");
+        let mut csprng = transcript.fork_transcript().reseed_from_rng(csprng);
+
+        // Create our roster entry.
+        let opening = Scalar::random(&mut csprng);
+        let commitment = CommittedPhoneNumber::from_phone_number(&number,
+                                                                 &opening,
+                                                                 &system_parameters.g,
+                                                                 &system_parameters.h);
+        // XXX Do actual encryption with a real key here
+        let roster_key = GroupRosterKey([0u8; 32]);
+        let roster_entry = RosterEntry::new(&commitment, &number, &opening, &roster_key);
+
+        Ok(SignalUser {
             user: user,
-            phone_number: phone_number,
-            roster_entry: None,
-            roster_entry_opening: None,
-        }
+            phone_number: number,
+            roster_entry: roster_entry,
+            roster_entry_opening: opening,
+        })
     }
 
     /// DOCDOC
     ///
     /// # Returns
     ///
-    pub fn obtain<R>(
-        &mut self,
-        rng: &mut R,
-    ) -> Result<SignalCredentialRequest, CredentialError>
-    where
-        R: RngCore + CryptoRng,
+    pub fn obtain(
+        &self,
+    ) -> SignalCredentialRequest
     {
         let mut transcript = Transcript::new(b"SIGNAL ISSUANCE REQUEST");
-        let mut csprng = transcript.fork_transcript().reseed_from_rng(rng);
-
-        // Map our phone number to a scalar mod ell.
-        let number: PhoneNumber = PhoneNumber::try_from_string(&self.phone_number)?;
-
-        // Create our roster entry.
-        let opening = Scalar::random(&mut csprng);
-        let commitment = CommittedPhoneNumber::from_phone_number(&number, &opening,
-                                                                 &self.user.system_parameters.g,
-                                                                 &self.user.system_parameters.h);
-        let roster_key = GroupRosterKey([1u8; 32]); // XXX
-        let roster_entry = RosterEntry::new(&commitment, &number, &opening, &roster_key);
-
-        self.roster_entry_opening = Some(opening);
-        self.roster_entry = Some(roster_entry);
 
         // Construct a proof that the roster entry is in fact a commitment to our phone_number.
         let secrets = revealed_attributes::Secrets {
-            nonce: &opening,
-            phone_number: &number.0,
+            nonce: &self.roster_entry_opening,
+            phone_number: &self.phone_number.0,
         };
         let publics = revealed_attributes::Publics {
             g: &self.user.system_parameters.g,
             h: &self.user.system_parameters.h,
-            roster_entry_commitment_number: &roster_entry.committed_phone_number.0.into(),
+            roster_entry_commitment_number: &self.roster_entry.committed_phone_number.0.into(),
         };
         let proof = revealed_attributes::Proof::create(&mut transcript, publics, secrets);
-        let request = self.user.obtain(vec![number.0]);
+        let request = self.user.obtain(vec![self.phone_number.0]);
 
-        Ok(SignalCredentialRequest {
+        SignalCredentialRequest {
             request: request,
             proof: proof,
-            roster_entry: roster_entry,
-        })
+            roster_entry: self.roster_entry,
+        }
     }
 
     /// DOCDOC
     pub fn obtain_finish(
         &mut self,
+        // XXX the Option is probably unnecessary, we never call this with None
+        //     because the FFI bails before that.
         issuance: Option<&SignalCredentialIssuance>,
     ) -> Result<(), CredentialError>
     {
@@ -145,30 +149,29 @@ impl SignalUser {
         };
         let (presentation, nonces) = self.user.show(rng)?;
 
-        let roster_entry: RosterEntry = match self.roster_entry {
-            None        => return Err(CredentialError::MissingData),
-            Some(ref x) => x.clone(),
-        };
         let mut roster_membership_transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
         let roster_membership_secrets = roster_membership::Secrets {
             m0: &credential.attributes[0],
             z0: &nonces[0],
-            nonce: &self.roster_entry_opening?,
+            nonce: &self.roster_entry_opening,
         };
         let roster_membership_publics = roster_membership::Publics {
             B: &self.user.system_parameters.g,
             A: &self.user.system_parameters.h,
             P: &presentation.rerandomized_nonce.clone(),
             Cm0: &presentation.attributes_blinded[0].into(),
-            RosterEntryPhoneNumberCommitment: &roster_entry.committed_phone_number.0.into(),
+            RosterEntryPhoneNumberCommitment: &self.roster_entry.committed_phone_number.0.into(),
         };
         let roster_membership_proof = roster_membership::Proof::create(&mut roster_membership_transcript,
                                                                        roster_membership_publics,
                                                                        roster_membership_secrets);
 
+        // XXX Should we be rerandomizing the roster_entry commitment?  The
+        //     encryptions won't be rerandomisable, so I believe this should be
+        //     unnecessary.
         Ok(SignalCredentialPresentation {
             presentation: presentation,
-            roster_entry: roster_entry.clone(),
+            roster_entry: self.roster_entry.clone(),
             roster_membership_proof: roster_membership_proof,
         })
     }

@@ -129,6 +129,33 @@ impl PhoneNumber {
 
         Ok(PhoneNumber(number))
     }
+
+    pub fn try_from_bytes(bytes: &[u8]) -> Result<Self, PhoneNumberError> {
+        let length: usize = bytes.len();
+
+        if length > 32 {
+            return Err(PhoneNumberError::LengthExceeded);
+        }
+        let mut bits: [u8; 32] = [0u8; 32];
+
+        // Prefix it with some bogus digits to prevent phone numbers with
+        // significant leading zeroes getting mapped to the same scalar:
+        bits[0] = 15;
+        bits[1] = 15;
+
+        // Write the phone number into the bytes:
+        for i in 2..length+2 {
+            bits[i] = bytes[i-2];
+        }
+        // Suffix some bogus digits as well and then finally add the length:
+        bits[length+2] = 15;
+        bits[length+3] = 15;
+        bits[length+4] = length as u8;
+
+        let number: Scalar = Scalar::from_bytes_mod_order(bits);
+
+        Ok(PhoneNumber(number))
+    }
 }
 
 impl From<PhoneNumber> for String {
