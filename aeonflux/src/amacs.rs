@@ -270,6 +270,7 @@ impl SecretKey {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[repr(C)]
 pub struct Keypair {
     pub public: PublicKey,
     pub secret: SecretKey,
