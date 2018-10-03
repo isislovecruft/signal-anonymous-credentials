@@ -30,13 +30,34 @@ use proofs::issuance_revealed;
 use proofs::valid_credential;
 
 /// An issuer and honest verifier of `Credential`s.
-#[derive(Deserialize, Serialize)]
 #[repr(C)]
 pub struct Issuer {
-    /// The issuer's aMAC key material.
-    pub keypair: amacs::Keypair,
     /// The system parameters.  Users and issuers must agree on parameters.
     pub system_parameters: SystemParameters,
+    /// The issuer's aMAC key material.
+    pub keypair: amacs::Keypair,
+}
+
+impl Issuer {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Issuer, CredentialError> {
+        if bytes.len() < 64 + 96 {
+            return Err(CredentialError::MissingData);
+        }
+
+        let system_parameters = SystemParameters::from_bytes(&bytes[..64])?;
+        let keypair = amacs::Keypair::from_bytes(&bytes[64..])?;
+
+        Ok(Issuer{ system_parameters, keypair })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(64 + self.keypair.len() * 32);
+
+        v.extend(self.system_parameters.to_bytes().iter());
+        v.extend(self.keypair.to_bytes().iter());
+
+        v
+    }
 }
 
 impl Issuer {

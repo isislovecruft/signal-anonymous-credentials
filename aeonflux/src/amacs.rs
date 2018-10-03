@@ -45,7 +45,7 @@ use errors::MacError;
 use parameters::NUMBER_OF_ATTRIBUTES;
 
 /// A `Message` is a vector of `Scalar`s in \( \mathbb{Z}/\mathbb{Z}\ell \).
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Message(pub Vec<Scalar>);
 
@@ -100,14 +100,45 @@ impl Index<usize> for Message {
 }
 
 /// A `Tag` for an authenticated `Message`.
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct Tag {
     pub nonce: RistrettoPoint,
     pub mac: RistrettoPoint,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+impl Tag {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Tag, MacError> {
+        if bytes.len() != 64 {
+            return Err(MacError::PointDecompressionError);
+        }
+
+        let mut P_bytes: [u8; 32] = [0u8; 32];
+        let mut Q_bytes: [u8; 32] = [0u8; 32];
+
+        P_bytes.copy_from_slice(&bytes[00..32]);
+        Q_bytes.copy_from_slice(&bytes[32..64]);
+
+        let P: RistrettoPoint = CompressedRistretto(P_bytes).decompress()?;
+        let Q: RistrettoPoint = CompressedRistretto(Q_bytes).decompress()?;
+
+        Ok(Tag {
+            nonce: P,
+            mac: Q,
+        })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(64);
+
+        v.extend(self.nonce.compress().to_bytes().iter());
+        v.extend(self.mac.compress().to_bytes().iter());
+
+        v
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct PublicKey {
@@ -145,10 +176,14 @@ impl PublicKey {
 
         v
     }
+
+    pub fn len(&self) -> usize {
+        self.Xn.len()
+    }
 }
 
 /// A secret key for authenticating and verifying `Tag`s.
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default)]
 #[repr(C)]
 pub struct SecretKey {
     pub x0: Scalar,
@@ -193,7 +228,7 @@ impl SecretKey {
         let mut x0: Option<Scalar> = None;
         let mut xn: Vec<Scalar> = Vec::with_capacity((length % 32) - 1);
 
-        // When #![feature(chunk_exact)] stabilises we should use that instead
+        // TODO When #![feature(chunk_exact)] stabilises we should use that instead
         for chunk in bytes.chunks(32) {
             let mut tmp = [0u8; 32];
 
@@ -213,6 +248,22 @@ impl SecretKey {
             None    => Err(MacError::MessageLengthError{ length }),
             Some(x) => Ok(SecretKey { x0: x, xn: xn })
         }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(32 + 32 * self.xn.len());
+
+        v.extend(self.x0.to_bytes().iter());
+
+        for x in self.xn.iter() {
+            v.extend(x.to_bytes().iter())
+        }
+
+        v
+    }
+
+    pub fn len(&self) -> usize {
+        self.xn.len() + 1
     }
 
     /// Compute public issuer parameters for use with anonymous credentials.
@@ -269,11 +320,43 @@ impl SecretKey {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Keypair {
     pub public: PublicKey,
     pub secret: SecretKey,
+}
+
+impl Keypair {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Keypair, MacError> {
+        let length: usize = bytes.len();
+
+        // The public key must always be 32 bytes shorter since the secret key has the extra x0 element.
+        let public_key_length: usize = (length - 32) / 2;
+        let secret_key_length: usize = length - public_key_length;
+
+        if public_key_length % 32 != 0 || secret_key_length % 32 != 0 {
+            return Err(MacError::KeypairDeserialisation);
+        }
+
+        let public: PublicKey = PublicKey::from_bytes(&bytes[..public_key_length])?;
+        let secret: SecretKey = SecretKey::from_bytes(&bytes[public_key_length..])?;
+
+        Ok(Keypair { public, secret })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity((self.public.len() + self.secret.len()) * 32);
+
+        v.extend(self.public.to_bytes().iter());
+        v.extend(self.secret.to_bytes().iter());
+
+        v
+    }
+
+    pub fn len(&self) -> usize {
+        self.public.len() + self.secret.len()
+    }
 }
 
 impl Keypair {

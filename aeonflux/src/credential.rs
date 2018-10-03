@@ -18,6 +18,8 @@ use elgamal;
 
 use pedersen;
 
+use errors::CredentialError;
+
 use proofs::attributes_blinded;
 use proofs::issuance_blinded;
 use proofs::issuance_revealed;
@@ -33,7 +35,7 @@ pub type EncryptedAttribute = elgamal::Encryption;
 
 /// An anonymous credential belonging to a user and issued and verified
 /// by an issuer.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Credential {
     /// The non-interactive zero knowledge proof that this credential is
@@ -44,12 +46,50 @@ pub struct Credential {
     pub attributes: Vec<RevealedAttribute>,
 }
 
+impl Credential {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Credential, CredentialError> {
+        let length: usize = bytes.len();
+
+        // The bytes must be a multiple of 32 and at least 96 bytes.
+        if length % 32 != 0 || length < 96 {
+            return Err(CredentialError::WrongNumberOfBytes);
+        }
+        let mac: Tag = Tag::from_bytes(&bytes[00..64])?;
+        let mut attributes: Vec<RevealedAttribute> = Vec::with_capacity((length % 32) - 64);
+
+        // TODO When #![feature(chunk_exact)] stabilises we should use that instead
+        for chunk in bytes[64..].chunks(32) {
+            let mut tmp: [u8; 32] = [0u8;32];
+
+            tmp.copy_from_slice(chunk);
+
+            match Scalar::from_canonical_bytes(tmp) {
+                Some(x) => attributes.push(x),
+                None    => return Err(CredentialError::ScalarFormatError),
+            }
+        }
+
+        Ok(Credential { mac, attributes })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(64 + 32 * self.attributes.len());
+
+        v.extend(self.mac.to_bytes());
+
+        for attribute in self.attributes.iter() {
+            v.extend(attribute.to_bytes().iter());
+        }
+
+        v
+    }
+}
+
 /// A request from a user for a `Credential`, optionally
 /// containing revealed and encrypted attributes.  If there are encrypted
 /// attributes, they must be accompanied by a proof that they are correctly
 /// formed with respect to the `User`'s `public_key, an elGamal encryption
 /// public key.
-#[derive(Deserialize, Serialize)]
 #[repr(C)]
 pub struct CredentialBlindRequest {
     /// An optional vector of credential attributes which are revealed to the issuer.
@@ -68,7 +108,6 @@ pub struct CredentialBlindRequest {
 }
 
 /// An blinded issuance of a `Credential`.
-#[derive(Deserialize, Serialize)]
 #[repr(C)]
 pub struct CredentialBlindIssuance {
     pub proof: issuance_blinded::Proof,
@@ -81,13 +120,48 @@ pub struct CredentialBlindIssuance {
     pub encrypted_attributes: Vec<EncryptedAttribute>,
 }
 
-#[derive(Deserialize, Serialize)]
 #[repr(C)]
 pub struct CredentialRequest {
     pub attributes_revealed: Vec<RevealedAttribute>,
 }
 
-#[derive(Deserialize, Serialize)]
+impl CredentialRequest {
+    pub fn from_bytes(bytes: &[u8]) -> Result<CredentialRequest, CredentialError> {
+        let length: usize = bytes.len();
+
+        // The bytes must be a multiple of 32.
+        if length % 32 != 0 {
+            return Err(CredentialError::WrongNumberOfBytes);
+        }
+
+        let mut attributes_revealed: Vec<RevealedAttribute> = Vec::with_capacity(length % 32);
+
+        // TODO When #![feature(chunk_exact)] stabilises we should use that instead
+        for chunk in bytes.chunks(32) {
+            let mut tmp: [u8; 32] = [0u8;32];
+
+            tmp.copy_from_slice(chunk);
+
+            match Scalar::from_canonical_bytes(tmp) {
+                Some(x) => attributes_revealed.push(x),
+                None    => return Err(CredentialError::ScalarFormatError),
+            }
+        }
+
+        Ok(CredentialRequest { attributes_revealed })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(32 * self.attributes_revealed.len());
+
+        for attribute in self.attributes_revealed.iter() {
+            v.extend(attribute.to_bytes().iter());
+        }
+
+        v
+    }
+}
+
 #[repr(C)]
 pub struct CredentialIssuance {
     pub proof: issuance_revealed::Proof,
@@ -95,7 +169,7 @@ pub struct CredentialIssuance {
     pub secret_key_commitment: RistrettoPoint,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct CredentialPresentation {
     /// A zero-knowledge proof showing that the user knows a valid rerandomised

@@ -9,9 +9,11 @@
 
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
+use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
+use errors::CredentialError;
 
 pub const NUMBER_OF_ATTRIBUTES: usize = 1;
 
@@ -29,10 +31,36 @@ pub const NUMBER_OF_ATTRIBUTES: usize = 1;
 ///
 //
 // DOCDOC fix above to use latex
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SystemParameters {
     pub g: RistrettoPoint,
     pub h: RistrettoPoint,
+}
+
+impl SystemParameters {
+    pub fn from_bytes(bytes: &[u8]) -> Result<SystemParameters, CredentialError> {
+        assert!(bytes.len() == 32);
+
+        let mut g_bytes = [0u8; 32];
+        let mut h_bytes = [0u8; 32];
+
+        g_bytes.copy_from_slice(&bytes[00..32]);
+        h_bytes.copy_from_slice(&bytes[32..64]);
+
+        Ok(SystemParameters {
+            g: CompressedRistretto(g_bytes).decompress()?,
+            h: CompressedRistretto(h_bytes).decompress()?,
+        })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(64);
+
+        v.extend(self.g.compress().to_bytes().iter());
+        v.extend(self.h.compress().to_bytes().iter());
+
+        v
+    }
 }
 
 // XXX use hyphae notation

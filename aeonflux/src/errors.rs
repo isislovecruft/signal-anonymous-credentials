@@ -12,8 +12,9 @@ use std::fmt;
 use std::fmt::Display;
 use std::option::NoneError;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum MacError {
+    KeypairDeserialisation,
     PointDecompressionError,
     ScalarFormatError,
     /// An error in the length of bytes handed to a constructor.
@@ -27,6 +28,8 @@ pub enum MacError {
 impl Display for MacError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            MacError::KeypairDeserialisation
+                => write!(f, "Cannot deserialise keypair"),
             MacError::PointDecompressionError
                 => write!(f, "Cannot decompress Ristretto point"),
             MacError::ScalarFormatError
@@ -41,7 +44,13 @@ impl Display for MacError {
 
 impl ::failure::Fail for MacError {}
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Deserialize, Serialize)]
+impl From<NoneError> for MacError {
+    fn from(_source: NoneError) -> MacError {
+        MacError::PointDecompressionError
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum CredentialError {
     BadAttribute,
     CredentialIssuance,
@@ -51,7 +60,9 @@ pub enum CredentialError {
     NoIssuerKey,
     NoIssuerParameters,
     NoSystemParameters,
+    ScalarFormatError,
     WrongNumberOfAttributes,
+    WrongNumberOfBytes,
     VerificationFailure,
 }
 
@@ -74,8 +85,12 @@ impl fmt::Display for CredentialError {
                 => write!(f, "The issuer was not initialised properly and has no parameters"),
             CredentialError::NoSystemParameters
                 => write!(f, "The system parameters were not initialised"),
+            CredentialError::ScalarFormatError
+                => write!(f, "Cannot use scalar with high-bit set"),
             CredentialError::WrongNumberOfAttributes
                 => write!(f, "The credential did not have the correct number of attributes"),
+            CredentialError::WrongNumberOfBytes
+                => write!(f, "The credential could not be deserialised because it was not a multiple of 32 bytes"),
             CredentialError::VerificationFailure
                 => write!(f, "The proof could not be verified"),
         }
@@ -87,5 +102,22 @@ impl ::failure::Fail for CredentialError { }
 impl From<NoneError> for CredentialError {
     fn from(_source: NoneError) -> CredentialError {
         CredentialError::MissingData
+    }
+}
+
+impl From<MacError> for CredentialError {
+    fn from(source: MacError) -> CredentialError {
+        match source {
+            MacError::KeypairDeserialisation
+                => CredentialError::NoIssuerKey,
+            MacError::PointDecompressionError
+                => CredentialError::NoIssuerParameters,
+            MacError::ScalarFormatError
+                => CredentialError::ScalarFormatError,
+            MacError::MessageLengthError{ length: _ }
+                => CredentialError::MacCreation,
+            MacError::AuthenticationError
+                => CredentialError::MacVerification,
+        }
     }
 }

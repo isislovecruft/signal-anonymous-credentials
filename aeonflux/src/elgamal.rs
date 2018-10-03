@@ -16,20 +16,26 @@ use std::ops::Add;
 use clear_on_drop::clear::Clear;
 
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
+use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
 use rand_core::CryptoRng;
 use rand_core::RngCore;
 
-pub use nonces::Ephemeral;
-pub use elgamal_public::PublicKey;
+use errors::CredentialError;
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub use nonces::Ephemeral;
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct PublicKey(pub(crate) RistrettoPoint);
+
+#[derive(Clone, Debug, Default)]
 #[repr(C)]
 pub struct SecretKey(pub(crate) Scalar);
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Keypair {
     pub secret: SecretKey,
@@ -50,7 +56,6 @@ pub struct Keypair {
 /// we are able to map scalars to group elements by simply multiplying them by
 /// the basepoint, which is obviously not invertible but works for the
 /// algebraic-MAC-based anonymous credential blind issuance use-case.
-#[derive(Deserialize, Serialize)]
 pub struct Message(pub(crate) RistrettoPoint);
 
 impl<'a> From<&'a Scalar> for Message {
@@ -59,7 +64,7 @@ impl<'a> From<&'a Scalar> for Message {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug)]
 pub struct Encryption {
     pub commitment: RistrettoPoint,
     pub encryption: RistrettoPoint,
@@ -73,6 +78,28 @@ impl<'a, 'b> Add<&'b Encryption> for &'a Encryption {
             commitment: self.commitment + other.commitment,
             encryption: self.encryption + other.encryption,
         }
+    }
+}
+
+impl PublicKey {
+    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, CredentialError> {
+        assert!(bytes.len() == 32);
+
+        let mut tmp = [0u8; 32];
+
+        tmp.copy_from_slice(bytes);
+
+        let point = CompressedRistretto(tmp).decompress()?;
+
+        Ok(PublicKey(point))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(32);
+
+        v.extend(self.0.compress().to_bytes().iter());
+
+        v
     }
 }
 
@@ -101,6 +128,28 @@ impl<'a> From<&'a SecretKey> for PublicKey {
 }
 
 impl SecretKey {
+    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, CredentialError> {
+        assert!(bytes.len() == 32);
+
+        let mut tmp = [0u8; 32];
+
+        tmp.copy_from_slice(bytes);
+
+        let s = Scalar::from_canonical_bytes(tmp)?;
+
+        Ok(SecretKey(s))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(32);
+
+        v.extend(self.0.to_bytes().iter());
+
+        v
+    }
+}
+
+impl SecretKey {
     pub fn generate<C>(csprng: &mut C) -> SecretKey
     where
         C: CryptoRng + RngCore,
@@ -125,6 +174,26 @@ impl From<SecretKey> for Scalar {
 impl Drop for SecretKey {
     fn drop(&mut self) {
         self.0.clear();
+    }
+}
+
+impl Keypair {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Keypair, CredentialError> {
+        assert!(bytes.len() == 64);
+
+        let secret = SecretKey::from_bytes(&bytes[00..32])?;
+        let public = PublicKey::from_bytes(&bytes[32..64])?;
+
+        Ok(Keypair{ secret, public })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(64);
+
+        v.extend(self.secret.to_bytes());
+        v.extend(self.public.to_bytes());
+
+        v
     }
 }
 

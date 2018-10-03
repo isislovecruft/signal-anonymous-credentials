@@ -18,6 +18,7 @@ extern crate clear_on_drop;
 extern crate curve25519_dalek;
 extern crate failure;
 extern crate rand_core;
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate sha2;

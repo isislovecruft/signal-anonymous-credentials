@@ -35,12 +35,64 @@ use proofs::issuance_revealed;
 use proofs::valid_credential;
 
 /// DOCDOC
-#[derive(Deserialize, Serialize)]
 pub struct User {
     pub system_parameters: SystemParameters,
     pub issuer_parameters: IssuerParameters,
     pub key: Option<elgamal::Keypair>,
     pub credential: Option<Credential>,
+}
+
+impl User {
+    pub fn from_bytes(bytes: &[u8]) -> Result<User, CredentialError> {
+        if bytes.len() != 256 {
+            return Err(CredentialError::MissingData);
+        }
+
+        let system_parameters = SystemParameters::from_bytes(&bytes[00..64])?;
+        let issuer_parameters = IssuerParameters::from_bytes(&bytes[64..96])?;
+
+        let key: Option<elgamal::Keypair>;
+
+        if &bytes[96..160] == &[0u8; 64][..] {
+            key = None;
+        } else {
+            key = Some(elgamal::Keypair::from_bytes(&bytes[96..160])?);
+        }
+
+        let credential: Option<Credential>;
+
+        if &bytes[160..256] == &[0u8; 96][..] {
+            credential = None;
+        } else {
+            credential = Some(Credential::from_bytes(&bytes[160..])?);
+        }
+
+        Ok(User {
+            system_parameters,
+            issuer_parameters,
+            key,
+            credential,
+        })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::new();
+
+        v.extend(self.system_parameters.to_bytes());
+        v.extend(self.issuer_parameters.to_bytes());
+
+        match self.key {
+            None        => v.extend([0u8; 64].iter()),
+            Some(ref x) => v.extend(x.to_bytes().iter()),
+        }
+
+        match self.credential {
+            None        => v.extend([0u8; 96].iter()),
+            Some(ref x) => v.extend(x.to_bytes().iter()),
+        }
+
+        v
+    }
 }
 
 impl User {

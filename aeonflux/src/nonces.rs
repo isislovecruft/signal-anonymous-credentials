@@ -30,7 +30,7 @@ use rand_core::RngCore;
 /// The encapsulated `Scalar` is `pub` so that we can access it (by borrow) for
 /// zero-knowledge proof creations, without copying or changing its type
 /// (otherwise the `clear()` on `Drop` would never run).
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default)]
 pub struct Ephemeral(pub Scalar);
 
 impl From<Scalar> for Ephemeral {
@@ -124,7 +124,7 @@ impl Mul<Ephemeral> for RistrettoPoint {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default)]
 pub struct Nonces(pub(crate) Vec<Ephemeral>);
 
 impl Drop for Nonces {

@@ -49,12 +49,28 @@ use roster::GroupRosterKey;
 use roster::RosterEntry;
 
 /// DOCDOC
-#[derive(Deserialize, Serialize)]
 pub struct SignalUser {
     pub user: User,
     pub roster_entry: RosterEntry,
     roster_entry_opening: Scalar,
     phone_number: PhoneNumber,
+}
+
+impl SignalUser {
+    pub fn from_bytes(bytes: &[u8]) -> Result<SignalUser, CredentialError> {
+        unimplemented!()
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::new();
+
+        v.extend(self.user.to_bytes());
+        v.extend(self.roster_entry.to_bytes());
+        v.extend(self.roster_entry_opening.to_bytes());
+        v.extend(self.phone_number.to_bytes());
+
+        v
+    }
 }
 
 impl SignalUser {
