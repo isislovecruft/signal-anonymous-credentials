@@ -195,18 +195,24 @@ impl SecretKey {
 
         // When #![feature(chunk_exact)] stabilises we should use that instead
         for chunk in bytes.chunks(32) {
-            let x: RistrettoPoint = match CompressedRistretto::from_slice(chunk).decompress() {
-                None    => return Err(CredentialError::NoIssuerParameters),
+            let mut tmp = [0u8; 32];
+
+            tmp.copy_from_slice(chunk);
+
+            let x = match Scalar::from_canonical_bytes(tmp) {
+                None    => return Err(MacError::ScalarFormatError),
                 Some(x) => x,
             };
-            if x0.is_none() {
-                x0 = x;
-            } else {
-                xn.push(x);
+
+            match x0 {
+                None    => x0 = Some(x),
+                Some(_) => xn.push(x),
             }
         }
-
-        Ok(SecretKey { x0, xn })
+        match x0 {
+            None    => Err(MacError::MessageLengthError{ length }),
+            Some(x) => Ok(SecretKey { x0: x, xn: xn })
+        }
     }
 
     /// Compute public issuer parameters for use with anonymous credentials.
