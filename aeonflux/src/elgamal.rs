@@ -8,28 +8,29 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
 #[cfg(not(feature = "std"))]
-use core::ops::{Add, Mul};
+use core::ops::Add;
 
 #[cfg(feature = "std")]
-use std::ops::{Add, Mul};
+use std::ops::Add;
 
 use clear_on_drop::clear::Clear;
 
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
-use curve25519_dalek::ristretto::RistrettoBasepointTable;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
 use rand_core::CryptoRng;
 use rand_core::RngCore;
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct PublicKey(pub(crate) RistrettoPoint);
+pub use nonces::Ephemeral;
+pub use elgamal_public::PublicKey;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[repr(C)]
 pub struct SecretKey(pub(crate) Scalar);
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[repr(C)]
 pub struct Keypair {
     pub secret: SecretKey,
     pub public: PublicKey,
@@ -72,45 +73,6 @@ impl<'a, 'b> Add<&'b Encryption> for &'a Encryption {
             commitment: self.commitment + other.commitment,
             encryption: self.encryption + other.encryption,
         }
-    }
-}
-
-/// An ephemeral key or nonce, used in elGamal encryptions and then discarded.
-///
-/// # Note
-///
-/// The encapsulated `Scalar` is `pub` so that we can access it (by borrow) for
-/// zero-knowledge proof creations, without copying or changing its type
-/// (otherwise the `clear()` on `Drop` would never run).
-#[derive(Default)]
-pub struct Ephemeral(pub Scalar);
-
-impl From<Scalar> for Ephemeral {
-    fn from(source: Scalar) -> Ephemeral {
-        Ephemeral(source)
-    }
-}
-
-/// Overwrite secret key material with null bytes when it goes out of scope.
-impl Drop for Ephemeral {
-    fn drop(&mut self) {
-        self.0.clear();
-    }
-}
-
-impl<'a, 'b> Mul<&'b RistrettoBasepointTable> for &'a Ephemeral {
-    type Output = RistrettoPoint;
-
-    fn mul(self, other: &'b RistrettoBasepointTable) -> RistrettoPoint {
-        &self.0 * other
-    }
-}
-
-impl<'a, 'b> Mul<&'a Ephemeral> for &'b RistrettoBasepointTable {
-    type Output = RistrettoPoint;
-
-    fn mul(self, other: &'a Ephemeral) -> RistrettoPoint {
-        self * &other.0
     }
 }
 

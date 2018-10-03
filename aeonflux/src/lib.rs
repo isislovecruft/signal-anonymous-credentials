@@ -33,6 +33,7 @@ pub mod credential;
 pub mod elgamal;
 pub mod errors;
 pub mod issuer;
+pub mod nonces;
 pub mod parameters;
 pub mod pedersen;
 pub mod proofs;

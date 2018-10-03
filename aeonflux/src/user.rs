@@ -32,6 +32,7 @@ use credential::RevealedAttribute;
 use elgamal;
 use errors::CredentialError;
 use issuer::IssuerParameters;
+use nonces::Nonces;
 use parameters::SystemParameters;
 use pedersen;
 use proofs::attributes_blinded;
@@ -115,10 +116,13 @@ impl User {
         }
     }
 
+    // We also pass in the nonces here in order to allow reusing them in
+    // proofs regarding the committed attributes.
     pub fn show<R>(
         &self,
-        rng: &mut R
-    ) -> Result<(CredentialPresentation, Vec<Scalar>), CredentialError>
+        nonces: &Nonces,
+        rng: &mut R,
+    ) -> Result<CredentialPresentation, CredentialError>
     where
         R: RngCore + CryptoRng,
     {
@@ -147,15 +151,11 @@ impl User {
         let CQ: pedersen::Commitment = pedersen::Commitment::to(&Q, &zQ, &A);
 
         // Commit to the hidden attributes.
-        let mut nonces: Vec<Scalar> = Vec::with_capacity(N_ATTRIBUTES);
         let mut commitments: Vec<pedersen::Commitment> = Vec::with_capacity(N_ATTRIBUTES);
 
-        for attribute in credential.attributes.iter() {
-            let zi: Scalar = Scalar::random(&mut csprng);
-            let miP: RistrettoPoint = attribute * P;
-            let Cmi: pedersen::Commitment = pedersen::Commitment::to(&miP, &zi, &A);
+        for (zi, mi) in nonces.iter().zip(credential.attributes.iter()) {
+            let Cmi: pedersen::Commitment = pedersen::Commitment::to(&(mi * P), zi.into(), &A);
 
-            nonces.push(zi);
             commitments.push(Cmi);
         }
 
@@ -169,7 +169,7 @@ impl User {
 
         let valid_credential_secrets = valid_credential::Secrets {
             m0: &credential.attributes[0],
-            z0: &nonces[0],
+            z0: (&nonces[0]).into(),
             minus_zQ: &-zQ,
         };
         let valid_credential_publics = valid_credential::Publics {
@@ -184,16 +184,12 @@ impl User {
                                                                      valid_credential_publics,
                                                                      valid_credential_secrets);
 
-        Ok(
-            (CredentialPresentation {
-                proof: valid_credential_proof,
-                rerandomized_mac_commitment: CQ,
-                rerandomized_nonce: rerandomized_mac.nonce,
-                attributes_revealed: Vec::with_capacity(0),
-                attributes_blinded: commitments,
-            },
-             // We also return the nonces here in order to allow reusing them in
-             // proofs regaring the committed attributes:
-             nonces.clone()))
+        Ok(CredentialPresentation {
+            proof: valid_credential_proof,
+            rerandomized_mac_commitment: CQ,
+            rerandomized_nonce: rerandomized_mac.nonce,
+            attributes_revealed: Vec::with_capacity(0),
+            attributes_blinded: commitments,
+        })
     }
 }
