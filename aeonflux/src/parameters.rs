@@ -13,6 +13,8 @@ use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
 
+pub const NUMBER_OF_ATTRIBUTES: usize = 1;
+
 /// The `SystemParameters` define the system-wide context in which the anonymous
 /// credentials scheme and its proofs are constructed within.
 ///

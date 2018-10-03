@@ -29,8 +29,6 @@ use parameters::SystemParameters;
 use proofs::issuance_revealed;
 use proofs::valid_credential;
 
-const NUMBER_OF_ATTRIBUTES: usize = 1;
-
 /// An issuer and honest verifier of `Credential`s.
 #[derive(Deserialize, Serialize)]
 #[repr(C)]
