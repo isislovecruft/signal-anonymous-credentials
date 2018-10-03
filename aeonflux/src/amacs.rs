@@ -135,6 +135,16 @@ impl PublicKey {
 
         Ok(PublicKey { Xn })
     }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(self.Xn.len() * 32);
+
+        for X in self.Xn.iter() {
+            v.extend(X.compress().0.iter());
+        }
+
+        v
+    }
 }
 
 /// A secret key for authenticating and verifying `Tag`s.
