@@ -282,7 +282,7 @@ impl Keypair {
         R: RngCore + CryptoRng,
     {
         let secret = SecretKey::new(NUMBER_OF_ATTRIBUTES, csprng);
-        let public = secret_key.get_public_key(&h);
+        let public = secret.get_public_key(&h);
 
         Keypair { public, secret }
     }
