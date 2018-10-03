@@ -73,7 +73,7 @@ impl Issuer {
 
     /// Get this `Issuer`s parameters for publishing to users.
     pub fn get_issuer_parameters(&self) -> IssuerParameters {
-        self.keypair.public
+        self.keypair.public.clone()
     }
 
     /// Unblinded credential issuance.
@@ -110,7 +110,7 @@ impl Issuer {
             Some(x) => *x,
             None => return Err(CredentialError::NoIssuerParameters),
         };
-        let x1: Scalar = match self.key.xn.get(0) {
+        let x1: Scalar = match self.keypair.secret.xn.get(0) {
             Some(x) => *x,
             None => return Err(CredentialError::NoIssuerKey),
         };
@@ -122,20 +122,20 @@ impl Issuer {
         let mut csprng = transcript.fork_transcript().reseed_from_rng(rng);
 
         // Calculate (u, u'), i.e. (nonce, mac)
-        let tag: amacs::Tag = self.key.mac(&attributes.clone().into(), &mut csprng)
+        let tag: amacs::Tag = self.keypair.secret.mac(&attributes.clone().into(), &mut csprng)
             .or(Err(CredentialError::MacCreation))?;
 
         // Choose a blinding factor, x~0
         let x0_tilde: Scalar = Scalar::random(&mut csprng);
 
         // Construct a commitment to the issuer secret key
-        let Cx0: RistrettoPoint = (&self.system_parameters.g * &self.key.x0) +
+        let Cx0: RistrettoPoint = (&self.system_parameters.g * &self.keypair.secret.x0) +
                                   (&self.system_parameters.h * &x0_tilde);
         // XXX Could speed up the above by multiscalar_mul and generating a basepoint table
 
         // Construct the NIZK proof of correct issuance
         let secrets = issuance_revealed::Secrets {
-            x0: &self.key.x0,
+            x0: &self.keypair.secret.x0,
             x1: &x1,
             x0_tilde: &x0_tilde,
             m1x1: &(&attributes[0] * &x1),
@@ -167,14 +167,14 @@ impl Issuer {
         let P = presentation.rerandomized_nonce;
 
         // Recompute the MAC
-        let mut V_prime: RistrettoPoint = &self.key.x0 * &P;
+        let mut V_prime: RistrettoPoint = &self.keypair.secret.x0 * &P;
 
         for (index, attribute) in presentation.attributes_revealed.iter().enumerate() {
-            V_prime += (&self.key.xn[index] * attribute) * &P;
+            V_prime += (&self.keypair.secret.xn[index] * attribute) * &P;
         }
 
         for (index, attribute) in presentation.attributes_blinded.iter().enumerate() {
-            V_prime += &self.key.xn[index] * attribute;
+            V_prime += &self.keypair.secret.xn[index] * attribute;
         }
         V_prime -= presentation.rerandomized_mac_commitment;
 
