@@ -32,6 +32,7 @@ use clear_on_drop::clear::Clear;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 
 use rand_core::RngCore;
@@ -40,6 +41,8 @@ use rand_core::CryptoRng;
 use sha2::Sha512;
 
 use errors::MacError;
+
+use parameters::NUMBER_OF_ATTRIBUTES;
 
 /// A `Message` is a vector of `Scalar`s in \( \mathbb{Z}/\mathbb{Z}\ell \).
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -112,19 +115,19 @@ pub struct PublicKey {
 }
 
 impl PublicKey {
-    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, CredentialError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, MacError> {
         let length: usize = bytes.len();
 
         // The bytes must be a multiple of 32.
         if length % 32 != 0 {
-            return Err(CredentialError::MissingData);
+            return Err(MacError::MessageLengthError { length });
         }
         let mut Xn: Vec<RistrettoPoint> = Vec::with_capacity(length % 32);
 
         // When #![feature(chunk_exact)] stabilises we should use that instead
         for chunk in bytes.chunks(32) {
             let X: RistrettoPoint = match CompressedRistretto::from_slice(chunk).decompress() {
-                None    => return Err(CredentialError::NoIssuerParameters),
+                None    => return Err(MacError::PointDecompressionError),
                 Some(x) => x,
             };
             Xn.push(X);
