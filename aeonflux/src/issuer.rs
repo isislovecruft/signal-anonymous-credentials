@@ -57,7 +57,7 @@ impl Issuer {
     where
         R: RngCore + CryptoRng,
     {
-        let keypair: amacs::Keypair::new(system_parameters.h, csprng);
+        let keypair = amacs::Keypair::new(&system_parameters.h, csprng);
 
         Issuer { system_parameters, keypair }
     }
