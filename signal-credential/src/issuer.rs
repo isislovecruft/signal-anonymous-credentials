@@ -88,6 +88,11 @@ impl SignalIssuer {
         }
     }
 
+    /// Get an owned copy of this `SignalIssuer`'s public aMAC key material.
+    pub fn get_issuer_parameters(&self) -> IssuerParameters {
+        self.issuer.get_issuer_parameters()
+    }
+
     /// Unblinded credential issuance.
     ///
     /// # Note
