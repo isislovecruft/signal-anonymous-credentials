@@ -26,7 +26,7 @@ features = ["nightly"]
 
 [dependencies]
 clear_on_drop = { version = "0.2" }
-curve25519-dalek = { version = "0.20", default-features = false }
+curve25519-dalek = { version = "0.21", default-features = false }
 failure = { version = "0.1", default-features = false }
 rand_core = { version = "0.2.1", default-features = false }
 # TODO The zkp crate currently requires both serde and serde_derive.
@@ -41,7 +41,7 @@ criterion = { version = "0.2" }
 rand = { version = "0.5", default-features = false }
 
 [replace]
-"curve25519-dalek:0.20.0" = { git = "https://github.com/isislovecruft/curve25519-dalek", branch = "fix/signal-changes" }
+"curve25519-dalek:0.21.0" = { git = "https://github.com/isislovecruft/curve25519-dalek", branch = "fix/signal-changes" }
 "zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/signal-changes" }
 
 # [[bench]]
