@@ -200,14 +200,18 @@ impl Issuer {
 mod test {
     use super::*;
 
-    use parameters::SystemParameters;
     use rand::thread_rng;
+
+    use credential::RevealedAttribute;
+    use parameters::NUMBER_OF_ATTRIBUTES;
+    use parameters::SystemParameters;
+    use nonces::Nonces;
     use user::User;
 
-    const H: [u8; 32] = [ 184, 238, 220,  64,   5, 247,  91, 135,
-                           93, 125, 218,  60,  36, 165, 166, 178,
-                          118, 188,  77,  27, 133, 146, 193, 133,
-                          234,  95,  69, 227, 213, 197,  84,  98, ];
+    const H: [u8; 32] = [ 154, 189, 169, 176, 131,  12,  78, 199,
+                          127,   4, 178,  70, 212, 141, 119, 112,
+                          153, 154, 135,  11, 227, 132, 247,  47,
+                           68, 192,  72, 200,  23,  88,  51,  82, ];
 
     #[test]
     fn credential_issuance_and_presentation() {
@@ -217,8 +221,7 @@ mod test {
 
         // Create an issuer
         let system_parameters: SystemParameters = SystemParameters::from(H);
-        let issuer_secret_key: IssuerSecretKey = IssuerSecretKey::new(NUMBER_OF_ATTRIBUTES, &mut issuer_rng);
-        let issuer: Issuer = Issuer::new(system_parameters, Some(&issuer_secret_key), &mut issuer_rng);
+        let issuer: Issuer = Issuer::create(system_parameters, &mut issuer_rng);
 
         // Get the issuer's parameters so we can advertise them to new users:
         let issuer_parameters: IssuerParameters = issuer.get_issuer_parameters();
@@ -230,7 +233,7 @@ mod test {
 
         // Form a request for a credential
         let alice_attributes: Vec<RevealedAttribute> = vec![Scalar::random(&mut alice_rng)];
-        let alice_request: CredentialRequest = alice.obtain(alice_attributes).unwrap();
+        let alice_request: CredentialRequest = alice.obtain(alice_attributes);
 
         // Try to get the issuer to give Alice a new credential
         let alice_issuance: CredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
@@ -238,7 +241,8 @@ mod test {
         // Give the result back to Alice for processing
         alice.obtain_finish(Some(&alice_issuance));
         
-        let alice_presentation: CredentialPresentation = alice.show(&mut alice_rng).unwrap();
+        let alice_nonces: Nonces = Nonces::new(&mut alice_rng, NUMBER_OF_ATTRIBUTES);
+        let alice_presentation: CredentialPresentation = alice.show(&alice_nonces, &mut alice_rng).unwrap();
         let verified_credential: VerifiedCredential = issuer.verify(&alice_presentation).unwrap();
     }
 }
