@@ -24,6 +24,7 @@ autobenches = false
 
 [dependencies]
 aeonflux = { version = "0.1.0", path = "../aeonflux" }
+bincode = { version = "1" }
 curve25519-dalek = { version = "0.21", default-features = false }
 failure = { version = "0.1", default-features = false }
 rand_core = { version = "0.2.1", default-features = false }

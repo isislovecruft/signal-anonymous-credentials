@@ -30,6 +30,8 @@ pub enum RosterError {
     MemberIsNotAdmin,
     MemberIsNotUser,
     MissingProof,
+    PhoneNumberInvalid,
+    RosterEntryWrongSize,
 }
 
 impl fmt::Display for RosterError {
@@ -49,6 +51,10 @@ impl fmt::Display for RosterError {
                 => write!(f, "The user is not in the group"),
             RosterError::MissingProof
                 => write!(f, "The user did not supply proof of roster membership"),
+            RosterError::PhoneNumberInvalid
+                => write!(f, "The phone number was invalid"),
+            RosterError::RosterEntryWrongSize
+                => write!(f, "The roster entry must be 96 bytes"),
         }
     }
 }
@@ -58,6 +64,12 @@ impl ::failure::Fail for RosterError { }
 impl From<NoneError> for RosterError {
     fn from(_source: NoneError) -> RosterError {
         RosterError::CouldNotAddMember
+    }
+}
+
+impl From<PhoneNumberError> for RosterError {
+    fn from(_source: PhoneNumberError) -> RosterError {
+        RosterError::PhoneNumberInvalid
     }
 }
 
@@ -88,6 +100,18 @@ impl From<NoneError> for PhoneNumberError {
 
 impl From<PhoneNumberError> for CredentialError {
     fn from(_source: PhoneNumberError) -> CredentialError {
+        NoneError.into()
+    }
+}
+
+impl From<CredentialError> for PhoneNumberError {
+    fn from(_source: CredentialError) -> PhoneNumberError {
+        NoneError.into()
+    }
+}
+
+impl From<RosterError> for CredentialError {
+    fn from(_source: RosterError) -> CredentialError {
         NoneError.into()
     }
 }

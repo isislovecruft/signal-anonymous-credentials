@@ -15,6 +15,7 @@ use aeonflux::credential::CredentialPresentation;
 use aeonflux::credential::CredentialRequest;
 use aeonflux::credential::EncryptedAttribute;
 use aeonflux::credential::RevealedAttribute;
+use aeonflux::credential::VerifiedCredential;
 use aeonflux::errors::CredentialError;
 use aeonflux::issuer::Issuer;
 use aeonflux::issuer::IssuerParameters;
@@ -32,7 +33,7 @@ use rand_core::CryptoRng;
 
 use zkp::Transcript;
 
-use credential::ISSUANCE_NUMBER_OF_HIDDEN_ATTRIBUTES;
+use credential::ISSUANCE_NUMBER_OF_BLINDED_ATTRIBUTES;
 use credential::ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES;
 use credential::NUMBER_OF_ATTRIBUTES;
 use credential::SignalCredential;
@@ -52,10 +53,21 @@ use roster::GroupMembershipLevel;
 use roster::GroupMembershipRoster;
 
 /// An issuer and honest verifier of `SignalCredential`s.
-#[derive(Deserialize, Serialize)]
 #[repr(C)]
 pub struct SignalIssuer {
     pub issuer: Issuer,
+}
+
+impl SignalIssuer {
+    pub fn from_bytes(bytes: &[u8]) -> Result<SignalIssuer, CredentialError> {
+        Ok(SignalIssuer {
+            issuer: Issuer::from_bytes(bytes)?,
+        })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.issuer.to_bytes()
+    }
 }
 
 impl SignalIssuer {
@@ -162,8 +174,8 @@ impl SignalIssuer {
         self.issuer.issue(&request.request, rng)
     }
 
-    pub fn verify<'a>(&self, signal_presentation: &'a SignalCredentialPresentation)
-        -> Result<VerifiedSignalCredential<'a>, CredentialError>
+    pub fn verify(&self, signal_presentation: SignalCredentialPresentation)
+        -> Result<VerifiedSignalCredential, CredentialError>
     {
         self.issuer.verify(&signal_presentation.presentation)?;
 

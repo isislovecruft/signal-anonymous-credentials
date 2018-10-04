@@ -9,13 +9,18 @@
 
 //! An implementation of CMZ'13 MAC_GGM based anonymous credentials for Signal.
 
+use aeonflux::credential::SIZEOF_CREDENTIAL_PRESENTATION;
 use aeonflux::credential::Credential;
 use aeonflux::credential::CredentialBlindRequest;
 use aeonflux::credential::CredentialBlindIssuance;
 use aeonflux::credential::CredentialIssuance;
 use aeonflux::credential::CredentialPresentation;
 use aeonflux::credential::CredentialRequest;
+use aeonflux::credential::VerifiedCredential;
+use aeonflux::errors::CredentialError;
 use aeonflux::proofs::valid_credential;
+
+use bincode::{deserialize, serialize};
 
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::ristretto::RistrettoPoint;
@@ -25,24 +30,25 @@ use proofs::blind_issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
 
+use roster::SIZEOF_ROSTER_ENTRY;
 use roster::RosterEntry;
 
 /// The number of revealed attributes on a `SignalCredential` during issuance.
 pub const ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES: usize = 1;
 
 /// The number of encrypted attributes on a `SignalCredential` during issuance.
-pub const ISSUANCE_NUMBER_OF_HIDDEN_ATTRIBUTES: usize = 0;
+pub const ISSUANCE_NUMBER_OF_BLINDED_ATTRIBUTES: usize = 0;
 
 /// The number of revealed attributes on a `SignalCredential` during presentation.
 pub const PRESENTATION_NUMBER_OF_REVEALED_ATTRIBUTES: usize = 0;
 
 /// The number of encrypted attributes on a `SignalCredential` during presentation.
-pub const PRESENTATION_NUMBER_OF_HIDDEN_ATTRIBUTES: usize = 1;
+pub const PRESENTATION_NUMBER_OF_BLINDED_ATTRIBUTES: usize = 1;
 
 /// The total number of attributes on a `SignalCredentia`.
 pub const NUMBER_OF_ATTRIBUTES: usize =
     ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES +
-    ISSUANCE_NUMBER_OF_HIDDEN_ATTRIBUTES;
+    ISSUANCE_NUMBER_OF_BLINDED_ATTRIBUTES;
 
 /// A request from a `SignalUser` for a `SignalCredential`, optionally
 /// containing revealed and encrypted attributes.  If there are encrypted
@@ -67,25 +73,105 @@ pub struct SignalCredentialBlindIssuance {
     pub issuance: CredentialBlindIssuance,
 }
 
-#[derive(Deserialize, Serialize)]
 #[repr(C)]
 pub struct SignalCredentialRequest {
+    pub roster_entry: RosterEntry,
     pub request: CredentialRequest,
     pub proof: revealed_attributes::Proof,
-    pub roster_entry: RosterEntry,
+}
+
+impl SignalCredentialRequest {
+    pub fn from_bytes(bytes: &[u8]) -> Result<SignalCredentialRequest, CredentialError> {
+        const RE: usize = SIZEOF_ROSTER_ENTRY;
+
+        let roster_entry = RosterEntry::from_bytes(&bytes[00..RE])?;
+        let request = CredentialRequest::from_bytes(&bytes[RE..RE + NUMBER_OF_ATTRIBUTES * 32])?;
+
+        let proof: revealed_attributes::Proof = match deserialize(&bytes[RE + NUMBER_OF_ATTRIBUTES * 32..]) {
+            Ok(x)  => x,
+            Err(x) => {
+                println!("Error while deserializing SignalCredentialRequest: {}", x);
+                return Err(CredentialError::MissingData);
+            },
+        };
+
+        Ok(SignalCredentialRequest { roster_entry, request, proof })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        // XXX What is the sizeof the proof?
+        let mut v: Vec<u8> = Vec::with_capacity(SIZEOF_ROSTER_ENTRY + NUMBER_OF_ATTRIBUTES * 32);
+
+        v.extend(self.roster_entry.to_bytes());
+        v.extend(self.request.to_bytes());
+
+        let serialized = match serialize(&self.proof) {
+            Ok(x)  => x,
+            Err(x) => {
+                println!("Error while serializing SignalCredentialRequest: {}", x);
+                panic!();  // XXX clean this up
+            },
+        };
+
+        v.extend(serialized);
+        v
+    }
 }
 
 pub type SignalCredentialIssuance = CredentialIssuance;
 
-#[derive(Deserialize, Serialize)]
 #[derive(Clone)]
 pub struct SignalCredentialPresentation {
-    pub presentation: CredentialPresentation,
     /// The user's corresponding `RosterEntry` in the `GroupMembershipRoster`.
     pub roster_entry: RosterEntry,
+    pub presentation: CredentialPresentation,
     /// An `roster_membership::Proof` attesting that the user is in a
     /// `GroupMembershipRoster`.
     pub roster_membership_proof: roster_membership::Proof,
+}
+
+impl SignalCredentialPresentation {
+    pub fn from_bytes(bytes: &[u8]) -> Result<SignalCredentialPresentation, CredentialError> {
+        const RE: usize = SIZEOF_ROSTER_ENTRY;
+
+        if bytes.len() < RE + SIZEOF_CREDENTIAL_PRESENTATION {
+            println!("The SignalCredentialPresentation bytes were not long enough, got {} bytes", bytes.len());
+            return Err(CredentialError::MissingData);
+        }
+
+        let roster_entry = RosterEntry::from_bytes(&bytes[00..RE])?;
+        let presentation = CredentialPresentation::from_bytes(&bytes[RE..RE+SIZEOF_CREDENTIAL_PRESENTATION])?;
+
+        let roster_membership_proof: roster_membership::Proof =
+            match deserialize(&bytes[RE+SIZEOF_CREDENTIAL_PRESENTATION..])
+        {
+            Ok(x)  => x,
+            Err(x) => {
+                println!("Error while deserializing SignalCredentialPresentation: {}", x);
+                return Err(CredentialError::MissingData);
+            },
+        };
+
+        Ok(SignalCredentialPresentation { roster_entry, presentation, roster_membership_proof })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(1000); // XXX
+
+        v.extend(self.roster_entry.to_bytes());
+        v.extend(self.presentation.to_bytes());
+
+        let serialized = match serialize(&self.roster_membership_proof) {
+            Ok(x)  => x,
+            Err(x) => {
+                println!("Error while serializing SignalCredentialPresentation: {}", x);
+                panic!();  // XXX clean this up
+            },
+        };
+
+        v.extend(serialized);
+        v
+    }
 }
 
 /// An anonymous credential belonging to a `SignalUser` and issued and verified
@@ -99,5 +185,14 @@ pub type SignalCredential = Credential;
 /// This type is used to cause the additional proof methods called by the issuer
 /// to only be callable if the issuer has previously successfully called
 /// `SignalIssuer.verify()`.
-#[derive(Clone)]
-pub struct VerifiedSignalCredential<'a>(pub(crate) &'a SignalCredentialPresentation);
+pub struct VerifiedSignalCredential(pub(crate) SignalCredentialPresentation);
+
+impl VerifiedSignalCredential {
+    pub fn from_bytes(bytes: &[u8]) -> Result<VerifiedSignalCredential, CredentialError> {
+        Ok(VerifiedSignalCredential(SignalCredentialPresentation::from_bytes(bytes)?))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.0.to_bytes()
+    }
+}

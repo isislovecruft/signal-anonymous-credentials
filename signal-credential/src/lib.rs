@@ -20,6 +20,7 @@
 #![allow(unused_imports)] // XXX remove this
 
 extern crate aeonflux;
+extern crate bincode;
 #[cfg(not(feature = "std"))]
 extern crate core;
 extern crate curve25519_dalek;

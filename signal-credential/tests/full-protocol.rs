@@ -85,7 +85,7 @@ fn credential_issuance_and_presentation() {
     // Alice wants to prove they're in the roster:
     let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng).unwrap();
 
-    let verified_credential: VerifiedSignalCredential = issuer.verify(&alice_presentation).unwrap();
+    let verified_credential: VerifiedSignalCredential = issuer.verify(alice_presentation).unwrap();
 
     let user_proof = issuer.verify_roster_membership(&verified_credential, &roster,
                                                      &GroupMembershipLevel::User);

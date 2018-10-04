@@ -22,6 +22,10 @@ use curve25519_dalek::scalar::Scalar;
 
 use errors::PhoneNumberError;
 
+pub const SIZEOF_PHONE_NUMBER: usize = 32;
+pub const SIZEOF_COMMITTED_PHONE_NUMBER: usize = pedersen::SIZEOF_COMMITMENT;
+pub const SIZEOF_ENCRYPTED_PHONE_NUMBER: usize = elgamal::SIZEOF_ENCRYPTION;
+
 /// A `Scalar` which represents a canonicalised phone number and may be used
 /// arithmetically.
 ///
@@ -30,7 +34,7 @@ use errors::PhoneNumberError;
 /// To disambiguate numbers which may have significant leading zeros in some
 /// countries and/or regions, we prefix the bytes of the scalar with
 /// `0x15`s. These `0x15`s are not part of the `number`.
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct PhoneNumber(pub Scalar);
 
@@ -40,6 +44,24 @@ impl Index<usize> for PhoneNumber {
     /// Index the bytes of this `PhoneNumber`.  Mutation is not permitted.
     fn index(&self, _index: usize) -> &u8 {
         &(self.0[_index])
+    }
+}
+
+impl PhoneNumber {
+    pub fn from_bytes(bytes: &[u8]) -> Result<PhoneNumber, PhoneNumberError> {
+        if bytes.len() != SIZEOF_PHONE_NUMBER {
+            return Err(PhoneNumberError::LengthExceeded);
+        }
+
+        let mut tmp: [u8; 32] = [0u8; 32];
+
+        tmp.copy_from_slice(&bytes[00..32]);
+
+        Ok(PhoneNumber(Scalar::from_bits(tmp)))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.0.to_bytes().to_vec()
     }
 }
 
@@ -213,7 +235,7 @@ impl PhoneNumber {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
 pub struct EncryptedPhoneNumber(pub elgamal::Encryption);
 
 impl From<EncryptedPhoneNumber> for Vec<EncryptedAttribute> {
@@ -226,8 +248,18 @@ impl From<EncryptedPhoneNumber> for Vec<EncryptedAttribute> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CommittedPhoneNumber(pub pedersen::Commitment);
+
+impl CommittedPhoneNumber {
+    pub fn from_bytes(bytes: &[u8]) -> Result<CommittedPhoneNumber, PhoneNumberError> {
+        Ok(CommittedPhoneNumber(pedersen::Commitment::from_bytes(bytes)?))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.0.to_bytes()
+    }
+}
 
 impl CommittedPhoneNumber {
     pub fn from_phone_number(

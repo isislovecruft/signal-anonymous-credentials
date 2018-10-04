@@ -17,6 +17,8 @@ use aeonflux::credential::EncryptedAttribute;
 use aeonflux::elgamal::{self};
 use aeonflux::errors::CredentialError;
 use aeonflux::issuer::IssuerParameters;
+use aeonflux::nonces::Nonces;
+use aeonflux::parameters::NUMBER_OF_ATTRIBUTES;
 use aeonflux::parameters::SystemParameters;
 use aeonflux::pedersen::{self, Commitment};
 use aeonflux::user::User;
@@ -31,7 +33,7 @@ use rand_core::CryptoRng;
 
 use zkp::Transcript;
 
-use credential::PRESENTATION_NUMBER_OF_HIDDEN_ATTRIBUTES;
+use credential::PRESENTATION_NUMBER_OF_BLINDED_ATTRIBUTES;
 use credential::SignalCredentialBlindIssuance;
 use credential::SignalCredentialBlindRequest;
 use credential::SignalCredentialIssuance;
@@ -45,29 +47,43 @@ use proofs::blind_attributes;
 use proofs::blind_issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
+use roster::SIZEOF_ROSTER_ENTRY;
 use roster::GroupRosterKey;
 use roster::RosterEntry;
 
 /// DOCDOC
+#[derive(Debug, Eq, PartialEq)]
 pub struct SignalUser {
-    pub user: User,
     pub roster_entry: RosterEntry,
     roster_entry_opening: Scalar,
     phone_number: PhoneNumber,
+    pub user: User,
 }
 
 impl SignalUser {
     pub fn from_bytes(bytes: &[u8]) -> Result<SignalUser, CredentialError> {
-        unimplemented!()
+        const RE: usize = SIZEOF_ROSTER_ENTRY;
+
+        let roster_entry = RosterEntry::from_bytes(&bytes[00..RE])?;
+
+        let mut tmp: [u8; 32] = [0u8; 32];
+
+        tmp.copy_from_slice(&bytes[RE..RE+32]);
+
+        let roster_entry_opening = Scalar::from_canonical_bytes(tmp)?;
+        let phone_number = PhoneNumber::from_bytes(&bytes[RE+32..RE+64])?;
+        let user = User::from_bytes(&bytes[RE+64..])?;
+
+        Ok(SignalUser { roster_entry, roster_entry_opening, phone_number, user })
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut v: Vec<u8> = Vec::new();
 
-        v.extend(self.user.to_bytes());
         v.extend(self.roster_entry.to_bytes());
-        v.extend(self.roster_entry_opening.to_bytes());
+        v.extend(self.roster_entry_opening.to_bytes().iter());
         v.extend(self.phone_number.to_bytes());
+        v.extend(self.user.to_bytes());
 
         v
     }
@@ -155,7 +171,10 @@ impl SignalUser {
     /// Show proof of membership in a roster of signal group users.
     ///
     /// DOCDOC
-    pub fn show<R>(&self, rng: &mut R) -> Result<SignalCredentialPresentation, CredentialError>
+    pub fn show<R>(
+        &self,
+        rng: &mut R,
+    ) -> Result<SignalCredentialPresentation, CredentialError>
     where
         R: RngCore + CryptoRng,
     {
@@ -163,12 +182,13 @@ impl SignalUser {
             Some(ref x) => x,
             None        => return Err(CredentialError::MissingData),
         };
-        let (presentation, nonces) = self.user.show(rng)?;
+        let nonces = Nonces::new(rng, NUMBER_OF_ATTRIBUTES);
+        let presentation = self.user.show(&nonces, rng)?;
 
         let mut roster_membership_transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
         let roster_membership_secrets = roster_membership::Secrets {
             m0: &credential.attributes[0],
-            z0: &nonces[0],
+            z0: &nonces[0].0,
             nonce: &self.roster_entry_opening,
         };
         let roster_membership_publics = roster_membership::Publics {
@@ -305,4 +325,39 @@ impl SignalUser {
     // 
     //     unimplemented!()
     // }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use issuer::SignalIssuer;
+
+    use rand::thread_rng;
+
+    const H: [u8; 32] = [ 184, 238, 220,  64,   5, 247,  91, 135,
+                          93, 125, 218,  60,  36, 165, 166, 178,
+                          118, 188,  77,  27, 133, 146, 193, 133,
+                          234,  95,  69, 227, 213, 197,  84,  98, ];
+
+    #[test]
+    fn signal_user_serialize_deserialize() {
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+
+        let system_parameters: SystemParameters = SystemParameters::from(H);
+        let issuer: SignalIssuer = SignalIssuer::create(system_parameters, &mut issuer_rng);
+        let issuer_parameters: IssuerParameters = issuer.issuer.keypair.public.clone();
+        let alice_phone_number_input: &[u8] = &[1, 4, 1, 5, 5, 5, 5, 1, 2, 3, 4];
+        let alice: SignalUser = SignalUser::new(system_parameters,
+                                                issuer_parameters.clone(),
+                                                None, // no encrypted attributes so the key isn't needed
+                                                alice_phone_number_input.clone(),
+                                                &mut alice_rng).unwrap();
+
+        let serialized = alice.to_bytes();
+        let deserialized = SignalUser::from_bytes(&serialized).unwrap();
+
+        assert!(deserialized == alice);
+    }
 }
