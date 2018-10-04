@@ -26,6 +26,7 @@ use credential::CredentialPresentation;
 use credential::VerifiedCredential;
 use errors::CredentialError;
 use parameters::SystemParameters;
+use pedersen::{self};
 use proofs::issuance_revealed;
 use proofs::valid_credential;
 
@@ -150,8 +151,8 @@ impl Issuer {
         let x0_tilde: Scalar = Scalar::random(&mut csprng);
 
         // Construct a commitment to the issuer secret key
-        let Cx0: RistrettoPoint = (&self.system_parameters.g * &self.keypair.secret.x0) +
-                                  (&self.system_parameters.h * &x0_tilde);
+        let Cx0 = pedersen::Commitment::to(&(&self.system_parameters.g * &self.keypair.secret.x0),
+                                           &x0_tilde, &self.system_parameters.h);
         // XXX Could speed up the above by multiscalar_mul and generating a basepoint table
 
         // Construct the NIZK proof of correct issuance
@@ -164,7 +165,7 @@ impl Issuer {
         let publics = issuance_revealed::Publics {
             P: &tag.nonce,
             Q: &tag.mac,
-            Cx0: &Cx0,
+            Cx0: &Cx0.into(),
             B: &self.system_parameters.g,
             A: &self.system_parameters.h,
             X1: &X1,
@@ -182,8 +183,8 @@ impl Issuer {
         })
     }
 
-    pub fn verify<'a>(&self, presentation: &'a CredentialPresentation)
-        -> Result<VerifiedCredential<'a>, CredentialError>
+    pub fn verify(&self, presentation: &CredentialPresentation)
+        -> Result<VerifiedCredential, CredentialError>
     {
         let P = presentation.rerandomized_nonce;
 
@@ -213,7 +214,7 @@ impl Issuer {
             return Err(CredentialError::MacVerification);
         }
 
-        Ok(VerifiedCredential(presentation))
+        Ok(VerifiedCredential(presentation.clone()))
     }
 }
 
@@ -260,10 +261,10 @@ mod test {
         let alice_issuance: CredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
 
         // Give the result back to Alice for processing
-        alice.obtain_finish(Some(&alice_issuance));
+        alice.obtain_finish(Some(&alice_issuance)).unwrap();
         
         let alice_nonces: Nonces = Nonces::new(&mut alice_rng, NUMBER_OF_ATTRIBUTES);
         let alice_presentation: CredentialPresentation = alice.show(&alice_nonces, &mut alice_rng).unwrap();
-        let verified_credential: VerifiedCredential = issuer.verify(&alice_presentation).unwrap();
+        let _verified_credential: VerifiedCredential = issuer.verify(alice_presentation).unwrap();
     }
 }

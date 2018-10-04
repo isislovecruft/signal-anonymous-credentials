@@ -35,6 +35,7 @@ use proofs::issuance_revealed;
 use proofs::valid_credential;
 
 /// DOCDOC
+#[derive(Debug, Eq, PartialEq)]
 pub struct User {
     pub system_parameters: SystemParameters,
     pub issuer_parameters: IssuerParameters,
@@ -145,7 +146,7 @@ impl User {
         let publics = issuance_revealed::Publics {
             P: &issue.credential.mac.nonce,
             Q: &issue.credential.mac.mac,
-            Cx0: &issue.secret_key_commitment,
+            Cx0: &issue.secret_key_commitment.into(),
             B: &self.system_parameters.g,
             A: &self.system_parameters.h,
             X1: &X1,

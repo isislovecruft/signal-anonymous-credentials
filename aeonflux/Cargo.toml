@@ -25,6 +25,7 @@ rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9e
 features = ["nightly"]
 
 [dependencies]
+bincode = { version = "1" }
 clear_on_drop = { version = "0.2" }
 curve25519-dalek = { version = "0.21", default-features = false }
 failure = { version = "0.1", default-features = false }

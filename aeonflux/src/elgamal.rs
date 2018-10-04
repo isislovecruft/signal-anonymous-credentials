@@ -27,15 +27,20 @@ use errors::CredentialError;
 
 pub use nonces::Ephemeral;
 
-#[derive(Clone, Copy, Debug)]
+pub const SIZEOF_PUBLIC_KEY: usize = 32;
+pub const SIZEOF_SECRET_KEY: usize = 32;
+pub const SIZEOF_KEYPAIR: usize = SIZEOF_PUBLIC_KEY + SIZEOF_SECRET_KEY;
+pub const SIZEOF_ENCRYPTION: usize = 64;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct PublicKey(pub(crate) RistrettoPoint);
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[repr(C)]
 pub struct SecretKey(pub(crate) Scalar);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct Keypair {
     pub secret: SecretKey,

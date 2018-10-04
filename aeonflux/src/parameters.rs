@@ -7,6 +7,7 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
+use curve25519_dalek::constants::RISTRETTO_BASEPOINT_COMPRESSED;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 use curve25519_dalek::ristretto::CompressedRistretto;
@@ -16,6 +17,7 @@ use curve25519_dalek::scalar::Scalar;
 use errors::CredentialError;
 
 pub const NUMBER_OF_ATTRIBUTES: usize = 1;
+pub const SIZEOF_SYSTEM_PARAMETERS: usize = 64;
 
 /// The `SystemParameters` define the system-wide context in which the anonymous
 /// credentials scheme and its proofs are constructed within.
@@ -39,7 +41,9 @@ pub struct SystemParameters {
 
 impl SystemParameters {
     pub fn from_bytes(bytes: &[u8]) -> Result<SystemParameters, CredentialError> {
-        assert!(bytes.len() == 32);
+        if bytes.len() != SIZEOF_SYSTEM_PARAMETERS {
+            return Err(CredentialError::NoSystemParameters);
+        }
 
         let mut g_bytes = [0u8; 32];
         let mut h_bytes = [0u8; 32];
@@ -47,10 +51,22 @@ impl SystemParameters {
         g_bytes.copy_from_slice(&bytes[00..32]);
         h_bytes.copy_from_slice(&bytes[32..64]);
 
-        Ok(SystemParameters {
-            g: CompressedRistretto(g_bytes).decompress()?,
-            h: CompressedRistretto(h_bytes).decompress()?,
-        })
+        let g: RistrettoPoint = match CompressedRistretto(g_bytes).decompress() {
+            Some(x)  => x,
+            None     => {
+                println!("Could not decode G from bytes: {:?}", g_bytes);
+                return Err(CredentialError::PointDecompressionError);
+            },
+        };
+        let h: RistrettoPoint = match CompressedRistretto(h_bytes).decompress() {
+            Some(x) => x,
+            None    => {
+                println!("Could not decode H from bytes: {:?}", h_bytes);
+                return Err(CredentialError::PointDecompressionError);
+            },
+        };
+
+        Ok(SystemParameters { g, h })
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -70,7 +86,7 @@ impl From<RistrettoPoint> for SystemParameters {
     /// # Inputs
     ///
     /// * `h`, a generator of the group `G`, which also has generator `g`, where
-    /// h is chosen orthogonally such that `log_g(h)` is unknown.
+    ///    `h` is chosen orthogonally such that `log_g(h)` is unknown.
     ///
     /// # Returns
     ///
@@ -86,6 +102,32 @@ impl From<RistrettoPoint> for SystemParameters {
 }
 
 impl From<[u8; 32]> for SystemParameters {
+    /// Construct the `SystemParameters` from a `CompressedRistretto` point.
+    ///
+    /// # Inputs
+    ///
+    /// * `h`, the compressed form a generator of the group `G`, which also has
+    ///   generator `g`, where h is chosen orthogonally such that `log_g(h)` is
+    ///   unknown.
+    ///
+    /// # Panics
+    ///
+    /// If `h` cannot be decompressed.
+    ///
+    /// # Returns
+    ///
+    /// The `SystemParameters` for an anonymous credential protocol.
+    fn from(h: [u8; 32]) -> SystemParameters {
+        debug_assert!(CompressedRistretto(h) != RISTRETTO_BASEPOINT_COMPRESSED);
+
+        SystemParameters {
+            g: RISTRETTO_BASEPOINT_POINT,
+            h: CompressedRistretto(h).decompress().unwrap(),
+        }
+    }
+}
+
+impl From<Scalar> for SystemParameters {
     /// Construct new system parameters from a `secret`.
     ///
     /// The `secret` will be used to derive the basepoint, `h`.
@@ -98,9 +140,45 @@ impl From<[u8; 32]> for SystemParameters {
     /// # Returns
     ///
     /// The `SystemParameters` for an anonymous credential protocol.
-    fn from(secret: [u8; 32]) -> SystemParameters {
-        let h = &Scalar::from_bytes_mod_order(secret) * &RISTRETTO_BASEPOINT_TABLE;
+    fn from(secret: Scalar) -> SystemParameters {
+        let h: RistrettoPoint = &secret.reduce() * &RISTRETTO_BASEPOINT_TABLE;
 
         h.into()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    const H: [u8; 32] = [ 184, 238, 220,  64,   5, 247,  91, 135,
+                           93, 125, 218,  60,  36, 165, 166, 178,
+                          118, 188,  77,  27, 133, 146, 193, 133,
+                          234,  95,  69, 227, 213, 197,  84,  98, ];
+
+    #[test]
+    fn system_parameters_serialize_deserialize() {
+        let system_parameters: SystemParameters = H.into();
+
+        let serialized = system_parameters.to_bytes();
+        let deserialized = SystemParameters::from_bytes(&serialized).unwrap();
+
+        assert!(system_parameters == deserialized);
+        assert!(&serialized[32..64] == &H);
+    }
+
+    #[test]
+    fn system_parameters_from_bytes() {
+        let bytes: [u8; 64] = [115, 121, 115, 116, 101, 109,  95, 112,
+                                97, 114,  97, 109, 101, 116, 101, 114,
+                               115,  95, 108, 101, 110, 103, 116, 104,
+                                32, 105, 115,  32,  54,  52,  10, 115,
+                               111, 109, 101,  32, 115, 104, 105, 116,
+                                32, 119,  97, 115,  32, 109, 105, 115,
+                               115, 105, 110, 103,  10, 146, 193, 133,
+                               234,  95,  69, 227, 213, 197,  84,  98, ];
+        let system_parameters = SystemParameters::from_bytes(&bytes);
+
+        assert!(system_parameters.is_err());
     }
 }

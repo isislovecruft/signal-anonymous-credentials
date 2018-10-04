@@ -14,6 +14,7 @@
 // We denote group elements with capital and scalars with lowercased names.
 #![allow(non_snake_case)]
 
+extern crate bincode;
 extern crate clear_on_drop;
 extern crate curve25519_dalek;
 extern crate failure;

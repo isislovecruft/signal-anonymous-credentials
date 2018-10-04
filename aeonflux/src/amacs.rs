@@ -44,6 +44,8 @@ use errors::MacError;
 
 use parameters::NUMBER_OF_ATTRIBUTES;
 
+pub const SIZEOF_TAG: usize = 64;
+
 /// A `Message` is a vector of `Scalar`s in \( \mathbb{Z}/\mathbb{Z}\ell \).
 #[derive(Clone, Debug)]
 #[repr(C)]
@@ -226,7 +228,7 @@ impl SecretKey {
             return Err(MacError::MessageLengthError{ length });
         }
         let mut x0: Option<Scalar> = None;
-        let mut xn: Vec<Scalar> = Vec::with_capacity((length % 32) - 1);
+        let mut xn: Vec<Scalar> = Vec::with_capacity((length / 32) - 1);
 
         // TODO When #![feature(chunk_exact)] stabilises we should use that instead
         for chunk in bytes.chunks(32) {

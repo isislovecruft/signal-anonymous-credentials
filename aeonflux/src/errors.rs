@@ -60,6 +60,7 @@ pub enum CredentialError {
     NoIssuerKey,
     NoIssuerParameters,
     NoSystemParameters,
+    PointDecompressionError,
     ScalarFormatError,
     WrongNumberOfAttributes,
     WrongNumberOfBytes,
@@ -85,6 +86,8 @@ impl fmt::Display for CredentialError {
                 => write!(f, "The issuer was not initialised properly and has no parameters"),
             CredentialError::NoSystemParameters
                 => write!(f, "The system parameters were not initialised"),
+            CredentialError::PointDecompressionError
+                => write!(f, "Cannot decompress Ristretto point"),
             CredentialError::ScalarFormatError
                 => write!(f, "Cannot use scalar with high-bit set"),
             CredentialError::WrongNumberOfAttributes

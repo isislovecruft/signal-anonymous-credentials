@@ -13,8 +13,13 @@ use core::ops::{Mul, SubAssign};
 #[cfg(feature = "std")]
 use std::ops::{Mul, SubAssign};
 
+use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
+
+use errors::CredentialError;
+
+pub const SIZEOF_COMMITMENT: usize = 32;
 
 /// A Pedersen commitment.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -45,6 +50,24 @@ impl<'a, 'b> Mul<&'a Commitment> for &'b Scalar {
 impl SubAssign<Commitment> for RistrettoPoint {
     fn sub_assign(&mut self, other: Commitment) {
         *self -= other.0;
+    }
+}
+
+impl Commitment {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Commitment, CredentialError> {
+        let mut tmp: [u8; 32] = [0u8; 32];
+
+        tmp.copy_from_slice(&bytes[0..32]);
+
+        Ok(Commitment(CompressedRistretto(tmp).decompress()?))
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(32);
+
+        v.extend(self.0.compress().to_bytes().iter());
+
+        v
     }
 }
 
