@@ -265,6 +265,6 @@ mod test {
         
         let alice_nonces: Nonces = Nonces::new(&mut alice_rng, NUMBER_OF_ATTRIBUTES);
         let alice_presentation: CredentialPresentation = alice.show(&alice_nonces, &mut alice_rng).unwrap();
-        let _verified_credential: VerifiedCredential = issuer.verify(alice_presentation).unwrap();
+        let _verified_credential: VerifiedCredential = issuer.verify(&alice_presentation).unwrap();
     }
 }
