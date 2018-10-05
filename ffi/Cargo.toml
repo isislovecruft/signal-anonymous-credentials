@@ -11,6 +11,9 @@ libc = { version = "0.2" }
 rand = { version = "0.5", default-features = false }
 signal-credential = { version = "*", path = "../signal-credential", default-features = false }
 
+[replace]
+"zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/stuff", default-features = false }
+
 [features]
 default = [ "std", "nightly" ]
 std = [ "signal-credential/std" ]
@@ -18,7 +21,3 @@ nightly = [ "signal-credential/nightly" ]
 u32_backend = [ "signal-credential/u32_backend" ]
 u64_backend = [ "signal-credential/u64_backend" ]
 avx2_backend = [ "signal-credential/avx2_backend" ]
-
-[replace]
-"curve25519-dalek:0.21.0" = { git = "https://github.com/isislovecruft/curve25519-dalek", branch = "fix/signal-changes" }
-"zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/signal-changes" }
