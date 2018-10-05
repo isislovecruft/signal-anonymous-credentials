@@ -12,3 +12,5 @@ Cargo.lock
 
 ._*
 .DS_Store
+
+**/private/*
