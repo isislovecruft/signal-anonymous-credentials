@@ -23,7 +23,7 @@ autobenches = false
 #crate-type = ["staticlib", "rlib", "cdylib"]
 
 [dependencies]
-aeonflux = { version = "0.1.0", path = "../aeonflux" }
+aeonflux = { version = "0.1.0", path = "../aeonflux", default-features = false }
 bincode = { version = "1" }
 curve25519-dalek = { version = "0.21", default-features = false }
 failure = { version = "0.1", default-features = false }
@@ -49,9 +49,9 @@ harness = false
 default = [ "std", "u64_backend" ]
 # TODO The zkp crate currently requires std (for no seemingly good reason).
 std = [ "aeonflux/std", "curve25519-dalek/std" ]
-nightly = [ "aeonflux/nightly", "curve25519-dalek/nightly" ]
+nightly = [ "aeonflux/nightly", "curve25519-dalek/nightly", "zkp/nightly" ]
 alloc = [ "curve25519-dalek/alloc" ]
 asm = [ "aeonflux/asm" ]
-u32_backend = [ "aeonflux/u32_backend", "curve25519-dalek/u32_backend" ]
-u64_backend = [ "aeonflux/u64_backend", "curve25519-dalek/u64_backend" ]
-avx2_backend = [ "aeonflux/avx2_backend", "curve25519-dalek/avx2_backend" ]
+u32_backend = [ "aeonflux/u32_backend", "curve25519-dalek/u32_backend", "zkp/u32_backend" ]
+u64_backend = [ "aeonflux/u64_backend", "curve25519-dalek/u64_backend", "zkp/u64_backend" ]
+avx2_backend = [ "aeonflux/avx2_backend", "curve25519-dalek/avx2_backend", "zkp/avx2_backend" ]

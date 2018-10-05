@@ -12,7 +12,7 @@ rand = { version = "0.5", default-features = false }
 signal-credential = { version = "*", path = "../signal-credential", default-features = false }
 
 [features]
-default = [ "std", "u64_backend", "nightly" ]
+default = [ "std", "nightly" ]
 std = [ "signal-credential/std" ]
 nightly = [ "signal-credential/nightly" ]
 u32_backend = [ "signal-credential/u32_backend" ]
