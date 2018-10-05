@@ -11,35 +11,32 @@
 
 use std::slice;
 
-use libc::size_t;
-use libc::uint8_t;
-use libc::uint64_t;
+pub use libc::size_t;
+pub use libc::uint8_t;
+pub use libc::uint64_t;
 
-use rand::ChaChaRng;
-use rand::SeedableRng;
+pub use rand::ChaChaRng;
+pub use rand::SeedableRng;
 
-// XXX put these in aeonflux::prelude and pub use them from the
-// signal-credential crate so we can remove the direct dependency on
-// aeonflux.
-use aeonflux::amacs::Keypair as AmacsKeypair; // The $t:tt in the macro can't munch ::
-use aeonflux::elgamal::{self};
-use aeonflux::issuer::IssuerParameters;
-use aeonflux::parameters::SystemParameters;
-
+use signal_credential::amacs::Keypair as AmacsKeypair; // The $t:tt in the macro can't munch ::
 use signal_credential::credential::SignalCredentialIssuance;
 use signal_credential::credential::SignalCredentialPresentation;
 use signal_credential::credential::SignalCredentialRequest;
 use signal_credential::credential::VerifiedSignalCredential;
+use signal_credential::elgamal::{self};
+use signal_credential::issuer::IssuerParameters;
 use signal_credential::issuer::SignalIssuer;
+use signal_credential::parameters::SystemParameters;
 use signal_credential::roster::GroupMembershipLevel;
 use signal_credential::roster::GroupMembershipRoster;
 use signal_credential::user::SignalUser;
 
-type SignalRng = ChaChaRng;
+pub type SignalRng = ChaChaRng;
 
 const LENGTH_H: usize = 32;
 const LENGTH_SEED: usize = 32;
 
+#[macro_export]
 macro_rules! slice_to_len_and_ptr {
     ($x:expr) => {{
         let x: &[u8] = $x;
@@ -48,12 +45,14 @@ macro_rules! slice_to_len_and_ptr {
     }}
 }
 
+#[macro_export]
 macro_rules! zero_len_and_ptr {
     () => {
         slice_to_len_and_ptr!(&[])
     }
 }
 
+#[macro_export]
 macro_rules! len_and_ptr_to_slice {
     ($len:expr, $ptr:ident) => {{
         if $ptr.is_null() || $len == 0 {
@@ -64,6 +63,7 @@ macro_rules! len_and_ptr_to_slice {
     }}
 }
 
+#[macro_export]
 macro_rules! ok_or_return {
     ($expr:expr) => {
         match $expr {
@@ -73,6 +73,7 @@ macro_rules! ok_or_return {
     }
 }
 
+#[macro_export]
 macro_rules! csprng_from_seed {
     ($seed:ident) => {{
         let seed_array: [u8; LENGTH_SEED] = ok_or_return!(uint8_to_array!($seed, LENGTH_SEED));
@@ -81,7 +82,7 @@ macro_rules! csprng_from_seed {
    }}
 }
 
-
+#[macro_export]
 macro_rules! uint8_to_array {
     ($ptr:ident, $array_length:expr) => {{
         if $ptr.is_null() || $array_length == 0 {
@@ -104,6 +105,7 @@ macro_rules! uint8_to_array {
     }}
 }
 
+#[macro_export]
 macro_rules! deserialize_or_return {
     ($t:tt, $len:expr, $ptr:ident) => {{
         let bytes: &[u8] = len_and_ptr_to_slice!($len, $ptr);
@@ -112,6 +114,7 @@ macro_rules! deserialize_or_return {
     }}
 }
 
+#[macro_export]
 macro_rules! serialize_or_return {
     ($t:expr) => {{
         $t.to_bytes()
