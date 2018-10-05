@@ -49,3 +49,6 @@ pub use phone_number::*;
 pub use proofs::*;
 pub use roster::*;
 pub use user::*;
+
+// Re-export common externally-used types from aeonflux.
+pub use aeonflux::prelude::*;
