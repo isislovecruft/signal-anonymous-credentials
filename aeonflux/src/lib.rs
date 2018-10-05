@@ -38,5 +38,6 @@ pub mod issuer;
 pub mod nonces;
 pub mod parameters;
 pub mod pedersen;
+pub mod prelude;
 pub mod proofs;
 pub mod user;
