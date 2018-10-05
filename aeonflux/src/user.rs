@@ -10,6 +10,11 @@
 // We denote group elements with capital and scalars with lowercased names.
 #![allow(non_snake_case)]
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;

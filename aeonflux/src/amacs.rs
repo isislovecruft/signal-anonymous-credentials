@@ -22,10 +22,20 @@
 //! for the "issuer parameters" used for anonymous credentials.  It should be
 //! generated securely.
 
-use std::string::String;
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::string::String;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
 use std::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::string::String;
 
+#[cfg(feature = "std")]
 use std::ops::{Index, Mul};
+
+#[cfg(not(feature = "std"))]
+use core::ops::{Index, Mul};
 
 use clear_on_drop::clear::Clear;
 

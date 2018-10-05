@@ -7,6 +7,11 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_COMPRESSED;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
@@ -54,14 +59,14 @@ impl SystemParameters {
         let g: RistrettoPoint = match CompressedRistretto(g_bytes).decompress() {
             Some(x)  => x,
             None     => {
-                println!("Could not decode G from bytes: {:?}", g_bytes);
+                // println!("Could not decode G from bytes: {:?}", g_bytes);
                 return Err(CredentialError::PointDecompressionError);
             },
         };
         let h: RistrettoPoint = match CompressedRistretto(h_bytes).decompress() {
             Some(x) => x,
             None    => {
-                println!("Could not decode H from bytes: {:?}", h_bytes);
+                // println!("Could not decode H from bytes: {:?}", h_bytes);
                 return Err(CredentialError::PointDecompressionError);
             },
         };

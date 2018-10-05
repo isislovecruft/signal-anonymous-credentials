@@ -9,6 +9,11 @@
 
 //! An implementation of CMZ'13 MAC_GGM based anonymous credentials with one attribute.
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
 use amacs::SIZEOF_TAG;
 use amacs::Tag;
 
@@ -198,9 +203,9 @@ impl CredentialIssuance {
         let credential = Credential::from_bytes(&bytes[32..32+SIZEOF_CREDENTIAL])?;
         
         let proof: issuance_revealed::Proof = match deserialize(&bytes[32+SIZEOF_CREDENTIAL..]) {
-            Ok(x)  => x,
-            Err(x) => {
-                println!("Error while deserializing CredentialIssuance: {}", x);
+            Ok(x)   => x,
+            Err(_x) => {
+                // println!("Error while deserializing CredentialIssuance: {}", _x);
                 return Err(CredentialError::MissingData);
             },
         };
@@ -215,9 +220,9 @@ impl CredentialIssuance {
         v.extend(self.credential.to_bytes());
 
         let serialized = match serialize(&self.proof) {
-            Ok(x)  => x,
-            Err(x) => {
-                println!("Error while serializing CredentialIssuance: {}", x);
+            Ok(x)   => x,
+            Err(_x) => {
+                // println!("Error while serializing CredentialIssuance: {}", _x);
                 panic!();  // XXX clean this up
             },
         };
@@ -286,9 +291,9 @@ impl CredentialPresentation {
         }
 
         let proof: valid_credential::Proof = match deserialize(&bytes[64+attributes_offset..]) {
-            Ok(x)  => x,
-            Err(x) => {
-                println!("Error while deserializing CredentialPresentation: {}", x);
+            Ok(x)   => x,
+            Err(_x) => {
+                // println!("Error while deserializing CredentialPresentation: {}", _x);
                 return Err(CredentialError::MissingData);
             },
         };
@@ -316,9 +321,9 @@ impl CredentialPresentation {
         }
 
         let serialized = match serialize(&self.proof) {
-            Ok(x)  => x,
-            Err(x) => {
-                println!("Error while serializing CredentialPresentation: {}", x);
+            Ok(x)   => x,
+            Err(_x) => {
+                // println!("Error while serializing CredentialPresentation: {}", _x);
                 panic!();  // XXX clean this up
             },
         };
@@ -377,7 +382,8 @@ mod test {
         let mut alice: User = User::new(system_parameters,
                                         issuer_parameters.clone(),
                                         None); // no encrypted attributes so the key isn't needed
-        let alice_attributes: Vec<RevealedAttribute> = vec![Scalar::random(&mut alice_rng)];
+        let mut alice_attributes: Vec<RevealedAttribute> = Vec::new();
+        alice_attributes.push(Scalar::random(&mut alice_rng));
         let alice_request: CredentialRequest = alice.obtain(alice_attributes);
         let alice_issuance: CredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
 

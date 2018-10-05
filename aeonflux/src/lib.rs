@@ -7,12 +7,19 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-// TODO The test feature is needed by the zkp crate.  This is preventing no_std from working.
-#![feature(test)]
+#![no_std]
+
 // TODO Get rid of the syntax that uses the nightly-only try_trait.
 #![feature(try_trait)]
 // We denote group elements with capital and scalars with lowercased names.
 #![allow(non_snake_case)]
+
+#![cfg_attr(any(not(feature = "std"), feature = "alloc"), feature(alloc))]
+
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(any(not(feature = "std"), feature = "alloc"))]
+extern crate alloc;
 
 extern crate bincode;
 extern crate clear_on_drop;

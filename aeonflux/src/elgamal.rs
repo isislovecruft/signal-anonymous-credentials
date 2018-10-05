@@ -13,6 +13,11 @@ use core::ops::Add;
 #[cfg(feature = "std")]
 use std::ops::Add;
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
 use clear_on_drop::clear::Clear;
 
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;

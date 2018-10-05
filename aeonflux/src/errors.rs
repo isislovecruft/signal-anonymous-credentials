@@ -7,10 +7,19 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-
+#[cfg(feature = "std")]
 use std::fmt;
+#[cfg(feature = "std")]
 use std::fmt::Display;
+#[cfg(feature = "std")]
 use std::option::NoneError;
+
+#[cfg(not(feature = "std"))]
+use core::fmt;
+#[cfg(not(feature = "std"))]
+use core::fmt::Display;
+#[cfg(not(feature = "std"))]
+use core::option::NoneError;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum MacError {

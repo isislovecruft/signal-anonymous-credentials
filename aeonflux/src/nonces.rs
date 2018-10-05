@@ -13,6 +13,11 @@ use core::ops::{Mul, Index};
 #[cfg(feature = "std")]
 use std::ops::{Mul, Index};
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
 use clear_on_drop::clear::Clear;
 
 use curve25519_dalek::ristretto::RistrettoBasepointTable;

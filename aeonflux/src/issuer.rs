@@ -7,6 +7,11 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
 use amacs;
 pub use amacs::PublicKey as IssuerParameters;
 pub use amacs::SecretKey as IssuerSecretKey;
@@ -254,7 +259,10 @@ mod test {
                                         None); // no encrypted attributes so the key isn't needed
 
         // Form a request for a credential
-        let alice_attributes: Vec<RevealedAttribute> = vec![Scalar::random(&mut alice_rng)];
+        let mut alice_attributes: Vec<RevealedAttribute> = Vec::new();
+
+        alice_attributes.push(Scalar::random(&mut alice_rng));
+
         let alice_request: CredentialRequest = alice.obtain(alice_attributes);
 
         // Try to get the issuer to give Alice a new credential
