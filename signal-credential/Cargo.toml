@@ -31,7 +31,7 @@ rand_core = { version = "0.2.1", default-features = false }
 # TODO The zkp crate currently requires both serde and serde_derive.
 serde = { version = "1" }
 serde_derive = { version = "1" }
-zkp = { version = "0.4" }
+zkp = { version = "0.4", default-features = false }
 
 [dev-dependencies]
 criterion = { version = "0.2" }
@@ -45,11 +45,10 @@ name = "credential-benchmarks"
 harness = false
 
 [features]
-default = [ "std", "u64_backend" ]
-# TODO The zkp crate currently requires std (for no seemingly good reason).
-std = [ "aeonflux/std", "curve25519-dalek/std" ]
+default = [ "std", "nightly", "u64_backend" ]
+std = [ "aeonflux/std", "curve25519-dalek/std", "zkp/std" ]
 nightly = [ "aeonflux/nightly", "curve25519-dalek/nightly", "zkp/nightly" ]
-alloc = [ "curve25519-dalek/alloc" ]
+alloc = [ "aeonflux/alloc", "curve25519-dalek/alloc", "zkp/alloc" ]
 asm = [ "aeonflux/asm" ]
 u32_backend = [ "aeonflux/u32_backend", "curve25519-dalek/u32_backend", "zkp/u32_backend" ]
 u64_backend = [ "aeonflux/u64_backend", "curve25519-dalek/u64_backend", "zkp/u64_backend" ]

@@ -7,10 +7,19 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-#[cfg(any(feature = "alloc", not(feature = "std")))]
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
 use alloc::string::String;
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::string::String;
 
+#[cfg(feature = "std")]
 use std::ops::{Index};
+#[cfg(not(feature = "std"))]
+use core::ops::{Index};
 
 use aeonflux::amacs::{self};
 use aeonflux::credential::EncryptedAttribute;
@@ -208,7 +217,11 @@ impl From<PhoneNumber> for String {
                 7 => s.push_str("7"),
                 8 => s.push_str("8"),
                 9 => s.push_str("9"),
-                _ => println!("Got weird digit in phone number {:?}", source[i]),
+                _ => {
+                    #[cfg(feature = "std")]
+                    println!("Got weird digit in phone number {:?}", source[i]);
+                    continue;
+                },
             }
         }
 

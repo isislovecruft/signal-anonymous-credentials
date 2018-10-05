@@ -7,13 +7,16 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-// We denote group elements with capital and scalars with lowercased names.
-#![allow(non_snake_case)]
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
 
 use aeonflux::amacs::{self, Tag};
 use aeonflux::credential::CredentialPresentation;
 use aeonflux::credential::CredentialRequest;
 use aeonflux::credential::EncryptedAttribute;
+use aeonflux::credential::RevealedAttribute;
 use aeonflux::elgamal::{self};
 use aeonflux::errors::CredentialError;
 use aeonflux::issuer::IssuerParameters;
@@ -148,7 +151,11 @@ impl SignalUser {
             roster_entry_commitment_number: &self.roster_entry.committed_phone_number.0.into(),
         };
         let proof = revealed_attributes::Proof::create(&mut transcript, publics, secrets);
-        let request = self.user.obtain(vec![self.phone_number.0]);
+
+        let mut attributes: Vec<RevealedAttribute> = Vec::with_capacity(NUMBER_OF_ATTRIBUTES);
+        attributes.push(self.phone_number.0);
+
+        let request = self.user.obtain(attributes);
 
         SignalCredentialRequest {
             request: request,

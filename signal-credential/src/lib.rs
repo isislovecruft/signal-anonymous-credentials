@@ -9,20 +9,25 @@
 
 //! Implementation of the anonymous credentials scheme in CMZ'13.
 
-// TODO The zkp crate currently requires std.
-//#![no_std]
+#![no_std]
 
-// TODO The test feature is needed by the zkp crate.  This is preventing no_std from working.
-#![feature(test)]
 // TODO Get rid of the syntax that uses the nightly-only try_trait.
 #![feature(try_trait)]
+// We denote group elements with capital and scalars with lowercased names.
+#![allow(non_snake_case)]
 
 #![allow(unused_imports)] // XXX remove this
 
+#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
+
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std;
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+extern crate alloc;
+
 extern crate aeonflux;
 extern crate bincode;
-#[cfg(not(feature = "std"))]
-extern crate core;
 extern crate curve25519_dalek;
 extern crate failure;
 extern crate rand_core;

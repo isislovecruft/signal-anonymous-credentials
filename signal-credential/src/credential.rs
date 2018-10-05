@@ -9,6 +9,11 @@
 
 //! An implementation of CMZ'13 MAC_GGM based anonymous credentials for Signal.
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
 use aeonflux::credential::SIZEOF_CREDENTIAL_PRESENTATION;
 use aeonflux::credential::Credential;
 use aeonflux::credential::CredentialBlindRequest;
@@ -88,9 +93,10 @@ impl SignalCredentialRequest {
         let request = CredentialRequest::from_bytes(&bytes[RE..RE + NUMBER_OF_ATTRIBUTES * 32])?;
 
         let proof: revealed_attributes::Proof = match deserialize(&bytes[RE + NUMBER_OF_ATTRIBUTES * 32..]) {
-            Ok(x)  => x,
-            Err(x) => {
-                println!("Error while deserializing SignalCredentialRequest: {}", x);
+            Ok(x)   => x,
+            Err(_x) => {
+                #[cfg(feature = "std")]
+                println!("Error while deserializing SignalCredentialRequest: {}", _x);
                 return Err(CredentialError::MissingData);
             },
         };
@@ -106,9 +112,10 @@ impl SignalCredentialRequest {
         v.extend(self.request.to_bytes());
 
         let serialized = match serialize(&self.proof) {
-            Ok(x)  => x,
-            Err(x) => {
-                println!("Error while serializing SignalCredentialRequest: {}", x);
+            Ok(x)   => x,
+            Err(_x) => {
+                #[cfg(feature = "std")]
+                println!("Error while serializing SignalCredentialRequest: {}", _x);
                 panic!();  // XXX clean this up
             },
         };
@@ -135,6 +142,7 @@ impl SignalCredentialPresentation {
         const RE: usize = SIZEOF_ROSTER_ENTRY;
 
         if bytes.len() < RE + SIZEOF_CREDENTIAL_PRESENTATION {
+            #[cfg(feature = "std")]
             println!("The SignalCredentialPresentation bytes were not long enough, got {} bytes", bytes.len());
             return Err(CredentialError::MissingData);
         }
@@ -145,9 +153,10 @@ impl SignalCredentialPresentation {
         let roster_membership_proof: roster_membership::Proof =
             match deserialize(&bytes[RE+SIZEOF_CREDENTIAL_PRESENTATION..])
         {
-            Ok(x)  => x,
-            Err(x) => {
-                println!("Error while deserializing SignalCredentialPresentation: {}", x);
+            Ok(x)   => x,
+            Err(_x) => {
+                #[cfg(feature = "std")]
+                println!("Error while deserializing SignalCredentialPresentation: {}", _x);
                 return Err(CredentialError::MissingData);
             },
         };
@@ -162,8 +171,9 @@ impl SignalCredentialPresentation {
         v.extend(self.presentation.to_bytes());
 
         let serialized = match serialize(&self.roster_membership_proof) {
-            Ok(x)  => x,
-            Err(x) => {
+            Ok(x)   => x,
+            Err(_x) => {
+                #[cfg(feature = "std")]
                 println!("Error while serializing SignalCredentialPresentation: {}", x);
                 panic!();  // XXX clean this up
             },

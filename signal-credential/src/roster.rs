@@ -9,6 +9,19 @@
 
 //! Encrypted membership rosters for Signal groups.
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
+// TODO We're using transmute just for serialising lengths (as u64s) to bytes so
+//      that we can pass them to C. This isn't the best, and we could write a little
+//      bit twiddly thing to do transmute::<u64, [u8; 8]> and vice versa manually.
+#[cfg(feature = "std")]
+use std::mem::transmute;
+#[cfg(not(feature = "std"))]
+use core::intrinsics::transmute;
+
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
@@ -138,10 +151,10 @@ impl GroupMembershipRoster {
         let mut tmp: [u8; 8] = [0u8; 8];
 
         tmp.copy_from_slice(&bytes[32..40]);
-        let group_id = unsafe { ::std::mem::transmute::<[u8; 8], u64>(tmp) };
+        let group_id = unsafe { transmute::<[u8; 8], u64>(tmp) };
 
         tmp.copy_from_slice(&bytes[40..48]);
-        let owners_len = unsafe { ::std::mem::transmute::<[u8; 8], u64>(tmp) } as usize;
+        let owners_len = unsafe { transmute::<[u8; 8], u64>(tmp) } as usize;
 
         let mut owners: Vec<RosterEntry> = Vec::with_capacity(owners_len);
         let owners_offset = 48 + owners_len * SIZEOF_ROSTER_ENTRY;
@@ -154,7 +167,7 @@ impl GroupMembershipRoster {
         }
 
         tmp.copy_from_slice(&bytes[owners_offset..owners_offset+8]);
-        let admins_len = unsafe { ::std::mem::transmute::<[u8; 8], u64>(tmp) } as usize;
+        let admins_len = unsafe { transmute::<[u8; 8], u64>(tmp) } as usize;
 
         let mut admins: Vec<RosterEntry> = Vec::with_capacity(admins_len);
         let admins_offset = owners_offset + 8 + admins_len * SIZEOF_ROSTER_ENTRY;
@@ -167,7 +180,7 @@ impl GroupMembershipRoster {
         }
 
         tmp.copy_from_slice(&bytes[admins_offset..admins_offset+8]);
-        let users_len = unsafe { ::std::mem::transmute::<[u8; 8], u64>(tmp) } as usize;
+        let users_len = unsafe { transmute::<[u8; 8], u64>(tmp) } as usize;
 
         let mut users: Vec<RosterEntry> = Vec::with_capacity(users_len);
         let users_offset = admins_offset + 8 + users_len * SIZEOF_ROSTER_ENTRY;
@@ -193,20 +206,20 @@ impl GroupMembershipRoster {
                                                 (self.owners.len() + self.admins.len() + self.users.len()));
 
         v.extend(self.key.0.iter());
-        v.extend(unsafe { ::std::mem::transmute::<u64, [u8; 8]>(self.group_id) }.iter());
-        v.extend(unsafe { ::std::mem::transmute::<u64, [u8; 8]>(self.owners.len() as u64) }.iter());
+        v.extend(unsafe { transmute::<u64, [u8; 8]>(self.group_id) }.iter());
+        v.extend(unsafe { transmute::<u64, [u8; 8]>(self.owners.len() as u64) }.iter());
 
         for member in self.owners.iter() {
             v.extend(member.to_bytes());
         }
 
-        v.extend(unsafe { ::std::mem::transmute::<u64, [u8; 8]>(self.admins.len() as u64) }.iter());
+        v.extend(unsafe { transmute::<u64, [u8; 8]>(self.admins.len() as u64) }.iter());
 
         for member in self.admins.iter() {
             v.extend(member.to_bytes());
         }
 
-        v.extend(unsafe { ::std::mem::transmute::<u64, [u8; 8]>(self.users.len() as u64) }.iter());
+        v.extend(unsafe { transmute::<u64, [u8; 8]>(self.users.len() as u64) }.iter());
 
         for member in self.users.iter() {
             v.extend(member.to_bytes());

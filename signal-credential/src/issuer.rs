@@ -7,6 +7,11 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
 use aeonflux::amacs::{self};
 use aeonflux::amacs::Tag;
 use aeonflux::credential::Credential;
