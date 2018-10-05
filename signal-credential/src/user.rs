@@ -46,8 +46,6 @@ use credential::SignalCredential;
 use phone_number::CommittedPhoneNumber;
 use phone_number::EncryptedPhoneNumber;
 use phone_number::PhoneNumber;
-use proofs::blind_attributes;
-use proofs::blind_issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
 use roster::SIZEOF_ROSTER_ENTRY;

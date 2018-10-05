@@ -30,8 +30,6 @@ use bincode::{deserialize, serialize};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::ristretto::RistrettoPoint;
 
-use proofs::blind_attributes;
-use proofs::blind_issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
 

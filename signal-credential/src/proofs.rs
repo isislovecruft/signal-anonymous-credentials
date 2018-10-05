@@ -51,41 +51,6 @@ create_nipk!(_blind_attributes,
              roster_entry = (A * m0 + B * nonce)
 );
 
-pub mod blind_attributes {
-    pub use super::_blind_attributes::Publics;
-    pub use super::_blind_attributes::Secrets;
-    pub use super::_blind_attributes::Proof;
-}
-
-// XXX The T0_0 and T0_1, etc., should be the same points but we need to pass
-//     them in twice because the zkp macro won't let us pass in AND proofs
-//     w.r.t. the same value, e.g.
-//
-//     T0 = (X0 * b), T0 = (h * t0),
-//     T1 = (X1 * b), T1 = (h * t1),
-create_nipk!(_blind_issuance,
-             (x0_tilde, x0, x1, s, b, t0),
-             (B, A, X0, X1, D, P, T0_0, T0_1,
-              EQ_commitment, EQ_encryption,
-              encrypted_attribute_0_0, encrypted_attribute_0_1)
-             :
-             X0 = (B * x0 + A * x0_tilde),
-             X1 = (A * x1),
-             P  = (B * b),
-             T0_0 = (X0 * b), T0_1 = (A * t0), // XXX the zkp crate doesn't like this, hack around it
-             EQ_commitment = (B * s + encrypted_attribute_0_0 * t0),
-             EQ_encryption = (D * s + encrypted_attribute_0_1 * t0
-// This part is only if there were revealed attributes:
-//                              + x0 * P + x1m1 * P + x2m2 * P
-                              )
-);
-
-pub mod blind_issuance {
-    pub use super::_blind_issuance::Publics;
-    pub use super::_blind_issuance::Secrets;
-    pub use super::_blind_issuance::Proof;
-}
-
 // XXX This is hacky because the "phone_number" here is actually the
 //     phone_number * h, where phone_number is also public but the zkp crate
 //     won't let us multiply two publics (or let us have a public scalar).

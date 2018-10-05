@@ -50,8 +50,6 @@ use credential::SignalCredentialPresentation;
 use credential::VerifiedSignalCredential;
 use errors::RosterError;
 use phone_number::PhoneNumber;
-use proofs::blind_attributes;
-use proofs::blind_issuance;
 use proofs::revealed_attributes;
 use proofs::roster_membership;
 use roster::GroupMembershipLevel;
