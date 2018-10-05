@@ -92,20 +92,14 @@ pub mod blind_issuance {
 //
 //     When we pull the code out of the macros the phone_number here
 //     should be a public.
-create_nipk!(_revealed_attributes,
+create_nipk!(revealed_attributes,
              (nonce, phone_number),
              (g, h, roster_entry_commitment_number)
              :
              roster_entry_commitment_number = (h * phone_number + g * nonce)
 );
 
-pub mod revealed_attributes {
-    pub use super::_revealed_attributes::Publics;
-    pub use super::_revealed_attributes::Secrets;
-    pub use super::_revealed_attributes::Proof;
-}
-
-create_nipk!(_roster_membership,
+create_nipk!(roster_membership,
              (m0, z0, nonce),
              (B, A, P, Cm0, RosterEntryPhoneNumberCommitment)
              :
@@ -113,9 +107,3 @@ create_nipk!(_roster_membership,
              Cm0 = (P * m0 + A * z0),
              RosterEntryPhoneNumberCommitment = (A * m0 + B * nonce)
 );
-
-pub mod roster_membership {
-    pub use super::_roster_membership::Publics;
-    pub use super::_roster_membership::Secrets;
-    pub use super::_roster_membership::Proof;
-}

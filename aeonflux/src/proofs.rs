@@ -40,7 +40,7 @@
 // currently support multiplying to scalars together before multiplying them by
 // the public point, so we multiply them before passing them into the
 // macro-generated code as an additional secret value (since it depend on x1).
-create_nipk!(_issuance_revealed,
+create_nipk!(issuance_revealed,
              (x0, x1, x0_tilde, m1x1),
              (P, Q, Cx0, B, A, X1)
              :
@@ -48,12 +48,6 @@ create_nipk!(_issuance_revealed,
              Cx0 = (B * x0 + A * x0_tilde),
              X1 = (A * x1)
 );
-
-pub mod issuance_revealed {
-    pub use super::_issuance_revealed::Publics;
-    pub use super::_issuance_revealed::Secrets;
-    pub use super::_issuance_revealed::Proof;
-}
 
 /// A NIPK proving that the blinded attributes are valid elGamal encryptions
 /// created with the user's public key.
@@ -75,7 +69,7 @@ pub mod issuance_revealed {
 /// # Proof Statements
 ///
 // DOCDOC
-create_nipk!(_attributes_blinded,
+create_nipk!(attributes_blinded,
              (d, e0, m0, nonce),
              (B, A, D, encrypted_attribute_0_0, encrypted_attribute_0_1)
              :
@@ -84,19 +78,13 @@ create_nipk!(_attributes_blinded,
              encrypted_attribute_0_1 = (B * m0 + D * e0)
 );
 
-pub mod attributes_blinded {
-    pub use super::_attributes_blinded::Publics;
-    pub use super::_attributes_blinded::Secrets;
-    pub use super::_attributes_blinded::Proof;
-}
-
 // XXX The T0_0 and T0_1, etc., should be the same points but we need to pass
 //     them in twice because the zkp macro won't let us pass in AND proofs
 //     w.r.t. the same value, e.g.
 //
 //     T0 = (X0 * b), T0 = (h * t0),
 //     T1 = (X1 * b), T1 = (h * t1),
-create_nipk!(_issuance_blinded,
+create_nipk!(issuance_blinded,
              (x0_tilde, x0, x1, s, b, t0),
              (B, A, X0, X1, D, P, T0_0, T0_1,
               EQ_commitment, EQ_encryption,
@@ -113,22 +101,10 @@ create_nipk!(_issuance_blinded,
                               )
 );
 
-pub mod issuance_blinded {
-    pub use super::_issuance_blinded::Publics;
-    pub use super::_issuance_blinded::Secrets;
-    pub use super::_issuance_blinded::Proof;
-}
-
-create_nipk!(_valid_credential,
+create_nipk!(valid_credential,
              (m0, z0, minus_zQ),
              (B, A, X0, P, V, Cm0)
              :
              Cm0 = (P * m0 + A * z0),
              V = (X0 * z0 + A * minus_zQ)
 );
-
-pub mod valid_credential {
-    pub use super::_valid_credential::Publics;
-    pub use super::_valid_credential::Secrets;
-    pub use super::_valid_credential::Proof;
-}
