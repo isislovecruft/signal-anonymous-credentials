@@ -52,3 +52,7 @@ pub use user::*;
 
 // Re-export common externally-used types from aeonflux.
 pub use aeonflux::prelude::*;
+
+pub mod parameters {
+    pub use aeonflux::prelude::SystemParameters;
+}
