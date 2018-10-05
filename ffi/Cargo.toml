@@ -6,7 +6,6 @@ description = "C, Java JNI, and JS/Wasm FFI APIs for Signal's anonymous credenti
 publish = false
 
 [dependencies]
-aeonflux = { version = "*", path = "../aeonflux" }
 libc = { version = "0.2" }
 rand = { version = "0.5", default-features = false }
 signal-credential = { version = "*", path = "../signal-credential", default-features = false }
