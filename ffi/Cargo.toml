@@ -14,7 +14,8 @@ signal-credential = { version = "*", path = "../signal-credential", default-feat
 "zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/stuff", default-features = false }
 
 [features]
-default = [ "std", "nightly" ]
+default = [ "nightly", "alloc" ]
+alloc = [ "signal-credential/alloc" ]
 std = [ "signal-credential/std" ]
 nightly = [ "signal-credential/nightly" ]
 u32_backend = [ "signal-credential/u32_backend" ]

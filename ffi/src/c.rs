@@ -41,7 +41,10 @@ macro_rules! slice_to_len_and_ptr {
     ($x:expr) => {{
         let x: &[u8] = $x;
 
-        (x.len() as uint64_t, x.as_ptr() as *const uint8_t)
+        buf_t {
+            len: x.len() as uint64_t,
+            ptr: x.as_ptr() as *const uint8_t,
+        }
     }}
 }
 
@@ -121,10 +124,16 @@ macro_rules! serialize_or_return {
     }}
 }
 
+#[repr(C)]
+pub struct buf_t {
+    pub len: uint64_t,
+    pub ptr: *const uint8_t,
+}
+
 #[no_mangle]
 pub extern "C" fn system_parameters_create(
     H: *const uint8_t,  // should be 32 bytes exactly
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let H_array: [u8; LENGTH_H] = ok_or_return!(uint8_to_array!(H, LENGTH_H));
     let system_parameters: SystemParameters = SystemParameters::from(H_array);
@@ -139,7 +148,7 @@ pub extern "C" fn issuer_create(
     system_parameters: *const uint8_t,
     system_parameters_length: uint64_t,
     seed: *const uint8_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let mut csprng: SignalRng = csprng_from_seed!(seed);
     let system_params = deserialize_or_return!(SystemParameters, system_parameters_length, system_parameters);
@@ -154,11 +163,11 @@ pub extern "C" fn issuer_new(
     system_parameters: *const uint8_t,
     system_parameters_length: uint64_t,
     keypair: *const uint8_t,
-    keypair_len: uint64_t,
-) -> (uint64_t, *const uint8_t)
+    keypair_length: uint64_t,
+) -> buf_t
 {
     let system_params = deserialize_or_return!(SystemParameters, system_parameters_length, system_parameters);
-    let keys = deserialize_or_return!(AmacsKeypair, keypair_len, keypair);
+    let keys = deserialize_or_return!(AmacsKeypair, keypair_length, keypair);
     let issuer: SignalIssuer = SignalIssuer::new(system_params, keys);
     let serialized: Vec<u8> = serialize_or_return!(&issuer);
 
@@ -169,7 +178,7 @@ pub extern "C" fn issuer_new(
 pub extern "C" fn issuer_get_issuer_parameters(
     issuer: *const uint8_t,
     issuer_length: uint64_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let deserialized = deserialize_or_return!(SignalIssuer, issuer_length, issuer);
     let issuer_parameters: IssuerParameters = deserialized.get_issuer_parameters();
@@ -187,7 +196,7 @@ pub extern "C" fn issuer_issue(
     request_length: uint64_t,
     phone_number: *const uint8_t,
     phone_number_length: uint64_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let issuer = deserialize_or_return!(SignalIssuer, issuer_length, issuer);
     let mut csprng: SignalRng = csprng_from_seed!(seed);
@@ -210,7 +219,7 @@ pub extern "C" fn user_new(
     issuer_parameters: *const uint8_t,
     issuer_parameters_length: uint64_t,
     seed: *const uint8_t, // must be 32 bytes exactly
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let system_params = deserialize_or_return!(SystemParameters, system_parameters_length, system_parameters);
     let issuer_params = deserialize_or_return!(IssuerParameters, issuer_parameters_length, issuer_parameters);
@@ -242,7 +251,7 @@ pub extern "C" fn user_new(
 pub extern "C" fn user_obtain(
     user: *const uint8_t,
     user_length: uint64_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let user_deserialized = deserialize_or_return!(SignalUser, user_length, user);
     let request: SignalCredentialRequest = user_deserialized.obtain();
@@ -258,7 +267,7 @@ pub extern "C" fn user_obtain_finish(
     user_length: uint64_t,
     issuance: *const uint8_t,
     issuance_length: uint64_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let mut user_deserialized = deserialize_or_return!(SignalUser, user_length, user);
     let issuance_deserialized = deserialize_or_return!(SignalCredentialIssuance, issuance_length, issuance);
@@ -275,7 +284,7 @@ pub extern "C" fn user_show(
     user: *const uint8_t,
     user_length: uint64_t,
     seed: *const uint8_t, // must be 32 bytes exactly
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let mut csprng: SignalRng = csprng_from_seed!(seed);
     let user_deserialized = deserialize_or_return!(SignalUser, user_length, user);
@@ -291,7 +300,7 @@ pub extern "C" fn issuer_verify(
     issuer_length: uint64_t,
     presentation: *const uint8_t,
     presentation_length: uint64_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let issuer_deserialized = deserialize_or_return!(SignalIssuer, issuer_length, issuer);
     let presentation_deserialized = deserialize_or_return!(SignalCredentialPresentation,
@@ -311,7 +320,7 @@ pub extern "C" fn issuer_verify_roster_membership_owner(
     verified_credential_length: uint64_t,
     roster: *const uint8_t,
     roster_length: uint64_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let issuer_deserialized = deserialize_or_return!(SignalIssuer, issuer_length, issuer);
     let verified = deserialize_or_return!(VerifiedSignalCredential,
@@ -322,8 +331,8 @@ pub extern "C" fn issuer_verify_roster_membership_owner(
                                                                     &GroupMembershipLevel::Owner);
 
     match is_in_roster {
-        Ok(_)  => (1, ::std::ptr::null()),
-        Err(_) => (0, ::std::ptr::null()),
+        Ok(_)  => buf_t { len: 1, ptr: ptr::null(), },
+        Err(_) => buf_t { len: 0, ptr: ptr::null(), },
     }
 }
 
@@ -335,7 +344,7 @@ pub extern "C" fn issuer_verify_roster_membership_admin(
     verified_credential_length: uint64_t,
     roster: *const uint8_t,
     roster_length: uint64_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let issuer_deserialized = deserialize_or_return!(SignalIssuer, issuer_length, issuer);
     let verified = deserialize_or_return!(VerifiedSignalCredential,
@@ -346,8 +355,8 @@ pub extern "C" fn issuer_verify_roster_membership_admin(
                                                                     &GroupMembershipLevel::Admin);
 
     match is_in_roster {
-        Ok(_)  => (1, ::std::ptr::null()),
-        Err(_) => (0, ::std::ptr::null()),
+        Ok(_)  => buf_t { len: 1, ptr: ptr::null(), },
+        Err(_) => buf_t { len: 0, ptr: ptr::null(), },
     }
 }
 
@@ -359,7 +368,7 @@ pub extern "C" fn issuer_verify_roster_membership_user(
     verified_credential_length: uint64_t,
     roster: *const uint8_t,
     roster_length: uint64_t,
-) -> (uint64_t, *const uint8_t)
+) -> buf_t
 {
     let issuer_deserialized = deserialize_or_return!(SignalIssuer, issuer_length, issuer);
     let verified = deserialize_or_return!(VerifiedSignalCredential,
@@ -370,8 +379,8 @@ pub extern "C" fn issuer_verify_roster_membership_user(
                                                                     &GroupMembershipLevel::User);
 
     match is_in_roster {
-        Ok(_)  => (1, ::std::ptr::null()),
-        Err(_) => (0, ::std::ptr::null()),
+        Ok(_)  => buf_t { len: 1, ptr: ptr::null(), },
+        Err(_) => buf_t { len: 0, ptr: ptr::null(), },
     }
 }
 
@@ -459,7 +468,7 @@ mod test {
         253, 187, 60, 122, 73, 2];
 
     macro_rules! assert_deserialized {
-        ($t:tt, $len:expr, $ptr:ident) => {{
+        ($t:tt, $len:expr, $ptr:expr) => {{
             let bytes: &[u8] = unsafe { slice::from_raw_parts($ptr, $len as size_t) };
 
             match $t::from_bytes(bytes) {
@@ -472,26 +481,26 @@ mod test {
     #[allow(unused_variables)]
     #[test]
     fn test_system_parameters_create () {
-        let (system_parameters_length, system_parameters) = system_parameters_create(H.as_ptr());
+        let system_parameters = system_parameters_create(H.as_ptr());
 
         let deserialized: SystemParameters = assert_deserialized!(SystemParameters,
-                                                                  system_parameters_length,
-                                                                  system_parameters);
+                                                                  system_parameters.len,
+                                                                  system_parameters.ptr);
         assert!(deserialized.h.compress().to_bytes() == H);
     }
 
     #[test]
     fn test_issuer_create() {
-        let (issuer_length, issuer) = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
-                                                    SYSTEM_PARAMETERS.len() as uint64_t,
-                                                    SEED.as_ptr());
+        let issuer = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
+                                   SYSTEM_PARAMETERS.len() as uint64_t,
+                                   SEED.as_ptr());
 
-        assert!(issuer_length != 0);
-        assert!(issuer_length == 160, "issuer length was {}", issuer_length);
+        assert!(issuer.len != 0);
+        assert!(issuer.len == 160, "issuer length was {}", issuer.len);
 
         let deserialized: SignalIssuer = assert_deserialized!(SignalIssuer,
-                                                              issuer_length,
-                                                              issuer);
+                                                              issuer.len,
+                                                              issuer.ptr);
 
         assert!(deserialized.issuer.system_parameters.h.compress().to_bytes() == H,
                 "deserialized was {:?}, original was {:?}",
@@ -500,30 +509,29 @@ mod test {
 
     #[test]
     fn test_issuer_new() {
-        let (issuer_length, issuer) = issuer_new(SYSTEM_PARAMETERS.as_ptr(),
-                                                 SYSTEM_PARAMETERS.len() as uint64_t,
-                                                 ISSUER_KEYPAIR.as_ptr(),
-                                                 ISSUER_KEYPAIR.len() as uint64_t);
+        let issuer = issuer_new(SYSTEM_PARAMETERS.as_ptr(),
+                                SYSTEM_PARAMETERS.len() as uint64_t,
+                                ISSUER_KEYPAIR.as_ptr(),
+                                ISSUER_KEYPAIR.len() as uint64_t);
 
-        assert_deserialized!(SignalIssuer, issuer_length, issuer);
+        assert_deserialized!(SignalIssuer, issuer.len, issuer.ptr);
     }
 
     #[allow(unused_variables)]
     #[test]
     fn test_issuer_get_issuer_parameters() {
-        let (system_parameters_length, system_parameters) = system_parameters_create(H.as_ptr());
-        let (issuer_length, issuer) = issuer_create(system_parameters,
-                                                    system_parameters_length,
-                                                    SEED.as_ptr());
-        let (issuer_parameters_length, issuer_parameters) = issuer_get_issuer_parameters(issuer,
-                                                                                         issuer_length);
+        let system_parameters = system_parameters_create(H.as_ptr());
+        let issuer = issuer_create(system_parameters.ptr,
+                                   system_parameters.len,
+                                   SEED.as_ptr());
+        let issuer_parameters = issuer_get_issuer_parameters(issuer.ptr, issuer.len);
 
-        assert!(issuer_parameters_length != 0);
-        assert!(issuer_parameters_length == 32, "issuer parameters length was {}", issuer_parameters_length);
+        assert!(issuer_parameters.len != 0);
+        assert!(issuer_parameters.len == 32, "issuer parameters length was {}", issuer_parameters.len);
 
         let deserialized: IssuerParameters = assert_deserialized!(IssuerParameters,
-                                                                  issuer_parameters_length,
-                                                                  issuer_parameters);
+                                                                  issuer_parameters.len,
+                                                                  issuer_parameters.ptr);
 
         assert!(deserialized.Xn.get(0).is_some());
     }
@@ -531,122 +539,120 @@ mod test {
     #[allow(unused_variables)]
     #[test]
     fn test_user_new() {
-        let (issuer_length, issuer) = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
-                                                    SYSTEM_PARAMETERS.len() as uint64_t,
-                                                    SEED.as_ptr());
-        let (issuer_parameters_length, issuer_parameters) = issuer_get_issuer_parameters(issuer,
-                                                                                         issuer_length);
-        let (user_length, user) = user_new(SYSTEM_PARAMETERS.as_ptr(),
-                                           SYSTEM_PARAMETERS.len() as uint64_t,
-                                           ::std::ptr::null(),
-                                           0 as uint64_t,
-                                           PHONE_NUMBER.as_ptr(),
-                                           PHONE_NUMBER.len() as uint64_t,
-                                           issuer_parameters,
-                                           issuer_parameters_length,
-                                           SEED.as_ptr());
-        assert!(user_length != 0);
-        assert!(user_length == 416, "user length was {}", user_length);
+        let issuer = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
+                                   SYSTEM_PARAMETERS.len() as uint64_t,
+                                   SEED.as_ptr());
+        let issuer_parameters = issuer_get_issuer_parameters(issuer.ptr, issuer.len);
+        let user = user_new(SYSTEM_PARAMETERS.as_ptr(),
+                            SYSTEM_PARAMETERS.len() as uint64_t,
+                            ptr::null(),
+                            0 as uint64_t,
+                            PHONE_NUMBER.as_ptr(),
+                            PHONE_NUMBER.len() as uint64_t,
+                            issuer_parameters.ptr,
+                            issuer_parameters.len,
+                            SEED.as_ptr());
+        assert!(user.len != 0);
+        assert!(user.len == 416, "user length was {}", user.len);
     }
 
     #[allow(unused_variables)]
     #[test]
     fn test_user_obtain() {
-        let (issuer_length, issuer) = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
+        let issuer = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
                                                     SYSTEM_PARAMETERS.len() as uint64_t,
                                                     SEED.as_ptr());
-        let (issuer_parameters_length, issuer_parameters) = issuer_get_issuer_parameters(issuer,
-                                                                                         issuer_length);
-        let (user_length, user) = user_new(SYSTEM_PARAMETERS.as_ptr(),
-                                           SYSTEM_PARAMETERS.len() as uint64_t,
-                                           ::std::ptr::null(),
-                                           0 as uint64_t,
-                                           PHONE_NUMBER.as_ptr(),
-                                           PHONE_NUMBER.len() as uint64_t,
-                                           issuer_parameters,
-                                           issuer_parameters_length,
-                                           SEED.as_ptr());
-        let (request_len, request) = user_obtain(user, user_length);
+        let issuer_parameters = issuer_get_issuer_parameters(issuer.ptr, issuer.len);
+        let user = user_new(SYSTEM_PARAMETERS.as_ptr(),
+                            SYSTEM_PARAMETERS.len() as uint64_t,
+                            ptr::null(),
+                            0 as uint64_t,
+                            PHONE_NUMBER.as_ptr(),
+                            PHONE_NUMBER.len() as uint64_t,
+                            issuer_parameters.ptr,
+                            issuer_parameters.len,
+                            SEED.as_ptr());
+        let request = user_obtain(user.ptr, user.len);
 
-        assert!(request_len != 0);
-        assert!(request_len == 248, "request length was {}", request_len);
+        assert!(request.len != 0);
+        assert!(request.len == 248, "request length was {}", request.len);
     }
 
     #[allow(unused_variables)]
     #[test]
     fn test_issuer_issue() {
-        let (issuer_length, issuer) = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
-                                                    SYSTEM_PARAMETERS.len() as uint64_t,
-                                                    SEED.as_ptr());
-        let (user_length, user) = user_new(SYSTEM_PARAMETERS.as_ptr(),
-                                           SYSTEM_PARAMETERS.len() as uint64_t,
-                                           ::std::ptr::null(),
-                                           0 as uint64_t,
-                                           PHONE_NUMBER.as_ptr(),
-                                           PHONE_NUMBER.len() as uint64_t,
-                                           ISSUER_PARAMETERS.as_ptr(),
-                                           ISSUER_PARAMETERS.len() as uint64_t,
-                                           SEED.as_ptr());
-        let (request_len, request) = user_obtain(user, user_length);
-        let (issuance_len, issuance) = issuer_issue(issuer,
-                                                    issuer_length,
-                                                    SEED.as_ptr(),
-                                                    request,
-                                                    request_len,
-                                                    PHONE_NUMBER.as_ptr(),
-                                                    PHONE_NUMBER.len() as uint64_t);
-        assert!(issuance_len != 0);
-        assert!(issuance_len == 328, "issuance length was {}", issuance_len);
+        let issuer = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
+                                   SYSTEM_PARAMETERS.len() as uint64_t,
+                                   SEED.as_ptr());
+        let user = user_new(SYSTEM_PARAMETERS.as_ptr(),
+                            SYSTEM_PARAMETERS.len() as uint64_t,
+                            ptr::null(),
+                            0 as uint64_t,
+                            PHONE_NUMBER.as_ptr(),
+                            PHONE_NUMBER.len() as uint64_t,
+                            ISSUER_PARAMETERS.as_ptr(),
+                            ISSUER_PARAMETERS.len() as uint64_t,
+                            SEED.as_ptr());
+        let request = user_obtain(user.ptr, user.len);
+        let issuance = issuer_issue(issuer.ptr,
+                                    issuer.len,
+                                    SEED.as_ptr(),
+                                    request.ptr,
+                                    request.len,
+                                    PHONE_NUMBER.as_ptr(),
+                                    PHONE_NUMBER.len() as uint64_t);
+        assert!(issuance.len != 0);
+        assert!(issuance.len == 328, "issuance length was {}", issuance.len);
     }
 
     #[allow(unused_variables)]
     #[test]
     fn test_user_obtain_finish() {
-        let (issuer_length, issuer) = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
-                                                    SYSTEM_PARAMETERS.len() as uint64_t,
-                                                    SEED.as_ptr());
-        let (user_length, user) = user_new(SYSTEM_PARAMETERS.as_ptr(),
-                                           SYSTEM_PARAMETERS.len() as uint64_t,
-                                           ::std::ptr::null(),
-                                           0 as uint64_t,
-                                           PHONE_NUMBER.as_ptr(),
-                                           PHONE_NUMBER.len() as uint64_t,
-                                           ISSUER_PARAMETERS.as_ptr(),
-                                           ISSUER_PARAMETERS.len() as uint64_t,
-                                           SEED.as_ptr());
-        let (request_len, request) = user_obtain(user, user_length);
-        let (issuance_len, issuance) = issuer_issue(issuer,
-                                                    issuer_length,
-                                                    SEED.as_ptr(),
-                                                    request,
-                                                    request_len,
-                                                    PHONE_NUMBER.as_ptr(),
-                                                    PHONE_NUMBER.len() as uint64_t);
-        let (new_user_length, new_user) = user_obtain_finish(user,
-                                                             user_length,
-                                                             issuance,
-                                                             issuance_len);
-        assert!(new_user_length != 0);
-        assert!(new_user_length == user_length);
+        let issuer = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
+                                   SYSTEM_PARAMETERS.len() as uint64_t,
+                                   SEED.as_ptr());
+        let user = user_new(SYSTEM_PARAMETERS.as_ptr(),
+                            SYSTEM_PARAMETERS.len() as uint64_t,
+                            ptr::null(),
+                            0 as uint64_t,
+                            PHONE_NUMBER.as_ptr(),
+                            PHONE_NUMBER.len() as uint64_t,
+                            ISSUER_PARAMETERS.as_ptr(),
+                            ISSUER_PARAMETERS.len() as uint64_t,
+                            SEED.as_ptr());
+        let request = user_obtain(user.ptr, user.len);
+        let issuance = issuer_issue(issuer.ptr,
+                                    issuer.len,
+                                    SEED.as_ptr(),
+                                    request.ptr,
+                                    request.len,
+                                    PHONE_NUMBER.as_ptr(),
+                                    PHONE_NUMBER.len() as uint64_t);
+        let new_user = user_obtain_finish(user.ptr,
+                                          user.len,
+                                          issuance.ptr,
+                                          issuance.len);
+        assert!(new_user.len != 0);
+        assert!(new_user.len == user.len);
     }
 
     #[test]
     fn test_user_show() {
-        let (presentation_length, presentation) = user_show(USER_WITH_CREDENTIAL.as_ptr(),
-                                                            USER_WITH_CREDENTIAL.len() as uint64_t,
-                                                            SEED.as_ptr());
+        let presentation = user_show(USER_WITH_CREDENTIAL.as_ptr(),
+                                     USER_WITH_CREDENTIAL.len() as uint64_t,
+                                     SEED.as_ptr());
 
-        assert_deserialized!(SignalCredentialPresentation, presentation_length, presentation);
+        assert_deserialized!(SignalCredentialPresentation, presentation.len, presentation.ptr);
     }
 
     #[test]
     fn test_issuer_verify() {
-        let (issuer_length, issuer) = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
-                                                    SYSTEM_PARAMETERS.len() as uint64_t,
-                                                    SEED.as_ptr());
-        let (verified_length, verified) = issuer_verify(issuer, issuer_length,
-                                                        PRESENTATION.as_ptr(), PRESENTATION.len() as uint64_t);
+        let issuer = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
+                                   SYSTEM_PARAMETERS.len() as uint64_t,
+                                   SEED.as_ptr());
+        let verified = issuer_verify(issuer.ptr, issuer.len,
+                                     PRESENTATION.as_ptr(), PRESENTATION.len() as uint64_t);
 
-        assert_deserialized!(VerifiedSignalCredential, verified_length, verified);
+        assert_deserialized!(VerifiedSignalCredential, verified.len, verified.ptr);
     }
 }
