@@ -6,7 +6,7 @@ description = "C, Java JNI, and JS/Wasm FFI APIs for Signal's anonymous credenti
 publish = false
 
 [dependencies]
-libc = { version = "0.2" }
+libc = { version = "0.2", default-features = false }
 rand = { version = "0.5", default-features = false }
 signal-credential = { version = "*", path = "../signal-credential", default-features = false }
 
