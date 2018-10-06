@@ -21,5 +21,8 @@ extern crate libc;
 extern crate rand;
 extern crate signal_credential;
 
-pub mod c;
+// The macros have to come first.
+#[macro_use]
 pub mod macros;
+
+pub mod c;

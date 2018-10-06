@@ -9,9 +9,6 @@
 
 //! C-like language FFI API.
 
-#[macro_use]
-use macros;
-
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 use alloc::vec::Vec;
 #[cfg(all(not(feature = "alloc"), feature = "std"))]
