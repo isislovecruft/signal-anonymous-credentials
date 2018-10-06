@@ -9,7 +9,20 @@
 
 //! C-like language FFI API.
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
+use std::vec::Vec;
+
+#[cfg(feature = "std")]
 use std::slice;
+#[cfg(not(feature = "std"))]
+use core::slice;
+
+#[cfg(feature = "std")]
+use std::ptr;
+#[cfg(not(feature = "std"))]
+use core::ptr;
 
 pub use libc::size_t;
 pub use libc::uint8_t;
@@ -70,8 +83,12 @@ macro_rules! len_and_ptr_to_slice {
 macro_rules! ok_or_return {
     ($expr:expr) => {
         match $expr {
-            Err(x) => { println!("{:?}", x); return zero_len_and_ptr!(); },
-            Ok(x)  => x,
+            Ok(x)   => x,
+            Err(_x) => {
+                #[cfg(feature = "std")]
+                println!("{:?}", _x);
+                return zero_len_and_ptr!();
+            },
         };
     }
 }
@@ -472,8 +489,12 @@ mod test {
             let bytes: &[u8] = unsafe { slice::from_raw_parts($ptr, $len as size_t) };
 
             match $t::from_bytes(bytes) {
-                Ok(t) => t,
-                Err(x) => { println!("{}", x); panic!(); },
+                Ok(t)   => t,
+                Err(_x) => {
+                    #[cfg(feature = "std")]
+                    println!("{}", _x);
+                    panic!();
+                },
             }
         }}
     }
