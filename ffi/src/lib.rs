@@ -22,3 +22,4 @@ extern crate rand;
 extern crate signal_credential;
 
 pub mod c;
+pub mod macros;
