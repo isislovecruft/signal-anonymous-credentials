@@ -24,9 +24,18 @@ use std::ptr;
 #[cfg(not(feature = "std"))]
 use core::ptr;
 
-pub use libc::size_t;
-pub use libc::uint8_t;
-pub use libc::uint64_t;
+cfg_if! {
+    // NOTE: The following only works because of wasm-bindgen.
+    if #[cfg(all(target_arch = "wasm32", not(target_os = "emscripten")))] {
+        #[allow(non_camel_case_types)] pub type size_t = usize;
+        #[allow(non_camel_case_types)] pub type uint8_t = u8;
+        #[allow(non_camel_case_types)] pub type uint64_t = u64;
+    } else {
+        pub use libc::size_t;
+        pub use libc::uint8_t;
+        pub use libc::uint64_t;
+    }
+}
 
 pub use rand::ChaChaRng;
 pub use rand::SeedableRng;
