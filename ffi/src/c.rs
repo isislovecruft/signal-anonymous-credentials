@@ -14,15 +14,15 @@ use alloc::vec::Vec;
 #[cfg(all(not(feature = "alloc"), feature = "std"))]
 use std::vec::Vec;
 
-#[cfg(feature = "std")]
-use std::slice;
-#[cfg(not(feature = "std"))]
-use core::slice;
-
-#[cfg(feature = "std")]
-use std::ptr;
-#[cfg(not(feature = "std"))]
-use core::ptr;
+cfg_if! {
+    if #[cfg(feature = "std")] {
+        use std::ptr;
+        use std::slice;
+    } else {
+        use core::ptr;
+        use core::slice;
+    }
+}
 
 cfg_if! {
     // NOTE: The following only works because of wasm-bindgen.
