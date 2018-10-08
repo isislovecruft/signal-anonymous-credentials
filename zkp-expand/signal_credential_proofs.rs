@@ -81,11 +81,7 @@ pub mod blind_attributes {
     impl Proof {
         /// Create a `Proof` from the given `Publics` and `Secrets`.
         #[allow(dead_code)]
-        pub fn create(
-            transcript: &mut Transcript,
-            publics: Publics,
-            secrets: Secrets,
-        ) -> Proof {
+        pub fn create(transcript: &mut Transcript, publics: Publics, secrets: Secrets) -> Proof {
             transcript.commit_bytes(b"domain-sep", "_blind_attributes".as_bytes());
             transcript.commit_bytes("B".as_bytes(), publics.B.compress().as_bytes());
             transcript.commit_bytes("A".as_bytes(), publics.A.compress().as_bytes());
@@ -104,10 +100,8 @@ pub mod blind_attributes {
             );
             let rng_ctor = transcript.fork_transcript();
             let rng_ctor = rng_ctor.commit_witness_bytes("d".as_bytes(), secrets.d.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("e0".as_bytes(), secrets.e0.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("m0".as_bytes(), secrets.m0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("e0".as_bytes(), secrets.e0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("m0".as_bytes(), secrets.m0.as_bytes());
             let rng_ctor =
                 rng_ctor.commit_witness_bytes("nonce".as_bytes(), secrets.nonce.as_bytes());
             let mut transcript_rng = rng_ctor.reseed_from_rng(&mut thread_rng());
@@ -182,9 +176,7 @@ pub mod blind_attributes {
                         .chain(iter::once(publics.encrypted_attribute_0_1)),
                 ),
                 roster_entry: RistrettoPoint::vartime_multiscalar_mul(
-                    (&[responses.m0, responses.nonce])
-                        .into_iter()
-                        .chain(iter::once(&(minus_c))),
+                    (&[responses.m0, responses.nonce]).into_iter().chain(iter::once(&(minus_c))),
                     (&[*(publics.A), *(publics.B)])
                         .into_iter()
                         .chain(iter::once(publics.roster_entry)),
@@ -273,11 +265,7 @@ pub mod revealed_attributes {
     impl Proof {
         /// Create a `Proof` from the given `Publics` and `Secrets`.
         #[allow(dead_code)]
-        pub fn create(
-            transcript: &mut Transcript,
-            publics: Publics,
-            secrets: Secrets,
-        ) -> Proof {
+        pub fn create(transcript: &mut Transcript, publics: Publics, secrets: Secrets) -> Proof {
             transcript.commit_bytes(b"domain-sep", "revealed_attributes".as_bytes());
             transcript.commit_bytes("g".as_bytes(), publics.g.compress().as_bytes());
             transcript.commit_bytes("h".as_bytes(), publics.h.compress().as_bytes());
@@ -288,10 +276,8 @@ pub mod revealed_attributes {
             let rng_ctor = transcript.fork_transcript();
             let rng_ctor =
                 rng_ctor.commit_witness_bytes("nonce".as_bytes(), secrets.nonce.as_bytes());
-            let rng_ctor = rng_ctor.commit_witness_bytes(
-                "phone_number".as_bytes(),
-                secrets.phone_number.as_bytes(),
-            );
+            let rng_ctor = rng_ctor
+                .commit_witness_bytes("phone_number".as_bytes(), secrets.phone_number.as_bytes());
             let mut transcript_rng = rng_ctor.reseed_from_rng(&mut thread_rng());
             let rand = Randomnesses {
                 nonce: Scalar::random(&mut transcript_rng),
@@ -358,4 +344,3 @@ pub mod revealed_attributes {
         }
     }
 }
-

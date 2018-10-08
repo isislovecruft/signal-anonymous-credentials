@@ -78,11 +78,7 @@ pub mod issuance_revealed {
     impl Proof {
         /// Create a `Proof` from the given `Publics` and `Secrets`.
         #[allow(dead_code)]
-        pub fn create(
-            transcript: &mut Transcript,
-            publics: Publics,
-            secrets: Secrets,
-        ) -> Proof {
+        pub fn create(transcript: &mut Transcript, publics: Publics, secrets: Secrets) -> Proof {
             transcript.commit_bytes(b"domain-sep", "issuance_revealed".as_bytes());
             transcript.commit_bytes("P".as_bytes(), publics.P.compress().as_bytes());
             transcript.commit_bytes("Q".as_bytes(), publics.Q.compress().as_bytes());
@@ -91,12 +87,10 @@ pub mod issuance_revealed {
             transcript.commit_bytes("A".as_bytes(), publics.A.compress().as_bytes());
             transcript.commit_bytes("X1".as_bytes(), publics.X1.compress().as_bytes());
             let rng_ctor = transcript.fork_transcript();
+            let rng_ctor = rng_ctor.commit_witness_bytes("x0".as_bytes(), secrets.x0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("x1".as_bytes(), secrets.x1.as_bytes());
             let rng_ctor =
-                rng_ctor.commit_witness_bytes("x0".as_bytes(), secrets.x0.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("x1".as_bytes(), secrets.x1.as_bytes());
-            let rng_ctor = rng_ctor
-                .commit_witness_bytes("x0_tilde".as_bytes(), secrets.x0_tilde.as_bytes());
+                rng_ctor.commit_witness_bytes("x0_tilde".as_bytes(), secrets.x0_tilde.as_bytes());
             let rng_ctor =
                 rng_ctor.commit_witness_bytes("m1x1".as_bytes(), secrets.m1x1.as_bytes());
             let mut transcript_rng = rng_ctor.reseed_from_rng(&mut thread_rng());
@@ -118,8 +112,7 @@ pub mod issuance_revealed {
                 X1: RistrettoPoint::multiscalar_mul(&[rand.x1], &[*(publics.A)]),
             };
             transcript.commit_bytes("com Q".as_bytes(), commitments.Q.compress().as_bytes());
-            transcript
-                .commit_bytes("com Cx0".as_bytes(), commitments.Cx0.compress().as_bytes());
+            transcript.commit_bytes("com Cx0".as_bytes(), commitments.Cx0.compress().as_bytes());
             transcript.commit_bytes("com X1".as_bytes(), commitments.X1.compress().as_bytes());
             let challenge = {
                 let mut bytes = [0; 64];
@@ -146,9 +139,7 @@ pub mod issuance_revealed {
                     (&[*(publics.P), *(publics.P)]).into_iter().chain(iter::once(publics.Q)),
                 ),
                 Cx0: RistrettoPoint::vartime_multiscalar_mul(
-                    (&[responses.x0, responses.x0_tilde])
-                        .into_iter()
-                        .chain(iter::once(&(minus_c))),
+                    (&[responses.x0, responses.x0_tilde]).into_iter().chain(iter::once(&(minus_c))),
                     (&[*(publics.B), *(publics.A)]).into_iter().chain(iter::once(publics.Cx0)),
                 ),
                 X1: RistrettoPoint::vartime_multiscalar_mul(
@@ -164,8 +155,7 @@ pub mod issuance_revealed {
             transcript.commit_bytes("A".as_bytes(), publics.A.compress().as_bytes());
             transcript.commit_bytes("X1".as_bytes(), publics.X1.compress().as_bytes());
             transcript.commit_bytes("com Q".as_bytes(), commitments.Q.compress().as_bytes());
-            transcript
-                .commit_bytes("com Cx0".as_bytes(), commitments.Cx0.compress().as_bytes());
+            transcript.commit_bytes("com Cx0".as_bytes(), commitments.Cx0.compress().as_bytes());
             transcript.commit_bytes("com X1".as_bytes(), commitments.X1.compress().as_bytes());
             let challenge = {
                 let mut bytes = [0; 64];
@@ -231,11 +221,7 @@ pub mod attributes_blinded {
     impl Proof {
         /// Create a `Proof` from the given `Publics` and `Secrets`.
         #[allow(dead_code)]
-        pub fn create(
-            transcript: &mut Transcript,
-            publics: Publics,
-            secrets: Secrets,
-        ) -> Proof {
+        pub fn create(transcript: &mut Transcript, publics: Publics, secrets: Secrets) -> Proof {
             transcript.commit_bytes(b"domain-sep", "attributes_blinded".as_bytes());
             transcript.commit_bytes("B".as_bytes(), publics.B.compress().as_bytes());
             transcript.commit_bytes("A".as_bytes(), publics.A.compress().as_bytes());
@@ -250,10 +236,8 @@ pub mod attributes_blinded {
             );
             let rng_ctor = transcript.fork_transcript();
             let rng_ctor = rng_ctor.commit_witness_bytes("d".as_bytes(), secrets.d.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("e0".as_bytes(), secrets.e0.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("m0".as_bytes(), secrets.m0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("e0".as_bytes(), secrets.e0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("m0".as_bytes(), secrets.m0.as_bytes());
             let rng_ctor =
                 rng_ctor.commit_witness_bytes("nonce".as_bytes(), secrets.nonce.as_bytes());
             let mut transcript_rng = rng_ctor.reseed_from_rng(&mut thread_rng());
@@ -421,11 +405,7 @@ pub mod issuance_blinded {
     impl Proof {
         /// Create a `Proof` from the given `Publics` and `Secrets`.
         #[allow(dead_code)]
-        pub fn create(
-            transcript: &mut Transcript,
-            publics: Publics,
-            secrets: Secrets,
-        ) -> Proof {
+        pub fn create(transcript: &mut Transcript, publics: Publics, secrets: Secrets) -> Proof {
             transcript.commit_bytes(b"domain-sep", "issuance_blinded".as_bytes());
             transcript.commit_bytes("B".as_bytes(), publics.B.compress().as_bytes());
             transcript.commit_bytes("A".as_bytes(), publics.A.compress().as_bytes());
@@ -452,16 +432,13 @@ pub mod issuance_blinded {
                 publics.encrypted_attribute_0_1.compress().as_bytes(),
             );
             let rng_ctor = transcript.fork_transcript();
-            let rng_ctor = rng_ctor
-                .commit_witness_bytes("x0_tilde".as_bytes(), secrets.x0_tilde.as_bytes());
             let rng_ctor =
-                rng_ctor.commit_witness_bytes("x0".as_bytes(), secrets.x0.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("x1".as_bytes(), secrets.x1.as_bytes());
+                rng_ctor.commit_witness_bytes("x0_tilde".as_bytes(), secrets.x0_tilde.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("x0".as_bytes(), secrets.x0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("x1".as_bytes(), secrets.x1.as_bytes());
             let rng_ctor = rng_ctor.commit_witness_bytes("s".as_bytes(), secrets.s.as_bytes());
             let rng_ctor = rng_ctor.commit_witness_bytes("b".as_bytes(), secrets.b.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("t0".as_bytes(), secrets.t0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("t0".as_bytes(), secrets.t0.as_bytes());
             let mut transcript_rng = rng_ctor.reseed_from_rng(&mut thread_rng());
             let rand = Randomnesses {
                 x0_tilde: Scalar::random(&mut transcript_rng),
@@ -492,10 +469,8 @@ pub mod issuance_blinded {
             transcript.commit_bytes("com X0".as_bytes(), commitments.X0.compress().as_bytes());
             transcript.commit_bytes("com X1".as_bytes(), commitments.X1.compress().as_bytes());
             transcript.commit_bytes("com P".as_bytes(), commitments.P.compress().as_bytes());
-            transcript
-                .commit_bytes("com T0_0".as_bytes(), commitments.T0_0.compress().as_bytes());
-            transcript
-                .commit_bytes("com T0_1".as_bytes(), commitments.T0_1.compress().as_bytes());
+            transcript.commit_bytes("com T0_0".as_bytes(), commitments.T0_0.compress().as_bytes());
+            transcript.commit_bytes("com T0_1".as_bytes(), commitments.T0_1.compress().as_bytes());
             transcript.commit_bytes(
                 "com EQ_commitment".as_bytes(),
                 commitments.EQ_commitment.compress().as_bytes(),
@@ -527,9 +502,7 @@ pub mod issuance_blinded {
             let minus_c = -&self.challenge;
             let commitments = Commitments {
                 X0: RistrettoPoint::vartime_multiscalar_mul(
-                    (&[responses.x0, responses.x0_tilde])
-                        .into_iter()
-                        .chain(iter::once(&(minus_c))),
+                    (&[responses.x0, responses.x0_tilde]).into_iter().chain(iter::once(&(minus_c))),
                     (&[*(publics.B), *(publics.A)]).into_iter().chain(iter::once(publics.X0)),
                 ),
                 X1: RistrettoPoint::vartime_multiscalar_mul(
@@ -589,10 +562,8 @@ pub mod issuance_blinded {
             transcript.commit_bytes("com X0".as_bytes(), commitments.X0.compress().as_bytes());
             transcript.commit_bytes("com X1".as_bytes(), commitments.X1.compress().as_bytes());
             transcript.commit_bytes("com P".as_bytes(), commitments.P.compress().as_bytes());
-            transcript
-                .commit_bytes("com T0_0".as_bytes(), commitments.T0_0.compress().as_bytes());
-            transcript
-                .commit_bytes("com T0_1".as_bytes(), commitments.T0_1.compress().as_bytes());
+            transcript.commit_bytes("com T0_0".as_bytes(), commitments.T0_0.compress().as_bytes());
+            transcript.commit_bytes("com T0_1".as_bytes(), commitments.T0_1.compress().as_bytes());
             transcript.commit_bytes(
                 "com EQ_commitment".as_bytes(),
                 commitments.EQ_commitment.compress().as_bytes(),
@@ -662,11 +633,7 @@ pub mod valid_credential {
     impl Proof {
         /// Create a `Proof` from the given `Publics` and `Secrets`.
         #[allow(dead_code)]
-        pub fn create(
-            transcript: &mut Transcript,
-            publics: Publics,
-            secrets: Secrets,
-        ) -> Proof {
+        pub fn create(transcript: &mut Transcript, publics: Publics, secrets: Secrets) -> Proof {
             transcript.commit_bytes(b"domain-sep", "valid_credential".as_bytes());
             transcript.commit_bytes("B".as_bytes(), publics.B.compress().as_bytes());
             transcript.commit_bytes("A".as_bytes(), publics.A.compress().as_bytes());
@@ -675,12 +642,10 @@ pub mod valid_credential {
             transcript.commit_bytes("V".as_bytes(), publics.V.compress().as_bytes());
             transcript.commit_bytes("Cm0".as_bytes(), publics.Cm0.compress().as_bytes());
             let rng_ctor = transcript.fork_transcript();
+            let rng_ctor = rng_ctor.commit_witness_bytes("m0".as_bytes(), secrets.m0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("z0".as_bytes(), secrets.z0.as_bytes());
             let rng_ctor =
-                rng_ctor.commit_witness_bytes("m0".as_bytes(), secrets.m0.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("z0".as_bytes(), secrets.z0.as_bytes());
-            let rng_ctor = rng_ctor
-                .commit_witness_bytes("minus_zQ".as_bytes(), secrets.minus_zQ.as_bytes());
+                rng_ctor.commit_witness_bytes("minus_zQ".as_bytes(), secrets.minus_zQ.as_bytes());
             let mut transcript_rng = rng_ctor.reseed_from_rng(&mut thread_rng());
             let rand = Randomnesses {
                 m0: Scalar::random(&mut transcript_rng),
@@ -697,8 +662,7 @@ pub mod valid_credential {
                     &[*(publics.X0), *(publics.A)],
                 ),
             };
-            transcript
-                .commit_bytes("com Cm0".as_bytes(), commitments.Cm0.compress().as_bytes());
+            transcript.commit_bytes("com Cm0".as_bytes(), commitments.Cm0.compress().as_bytes());
             transcript.commit_bytes("com V".as_bytes(), commitments.V.compress().as_bytes());
             let challenge = {
                 let mut bytes = [0; 64];
@@ -724,9 +688,7 @@ pub mod valid_credential {
                     (&[*(publics.P), *(publics.A)]).into_iter().chain(iter::once(publics.Cm0)),
                 ),
                 V: RistrettoPoint::vartime_multiscalar_mul(
-                    (&[responses.z0, responses.minus_zQ])
-                        .into_iter()
-                        .chain(iter::once(&(minus_c))),
+                    (&[responses.z0, responses.minus_zQ]).into_iter().chain(iter::once(&(minus_c))),
                     (&[*(publics.X0), *(publics.A)]).into_iter().chain(iter::once(publics.V)),
                 ),
             };
@@ -737,8 +699,7 @@ pub mod valid_credential {
             transcript.commit_bytes("P".as_bytes(), publics.P.compress().as_bytes());
             transcript.commit_bytes("V".as_bytes(), publics.V.compress().as_bytes());
             transcript.commit_bytes("Cm0".as_bytes(), publics.Cm0.compress().as_bytes());
-            transcript
-                .commit_bytes("com Cm0".as_bytes(), commitments.Cm0.compress().as_bytes());
+            transcript.commit_bytes("com Cm0".as_bytes(), commitments.Cm0.compress().as_bytes());
             transcript.commit_bytes("com V".as_bytes(), commitments.V.compress().as_bytes());
             let challenge = {
                 let mut bytes = [0; 64];
@@ -800,11 +761,7 @@ pub mod committed_values_equal {
     impl Proof {
         /// Create a `Proof` from the given `Publics` and `Secrets`.
         #[allow(dead_code)]
-        pub fn create(
-            transcript: &mut Transcript,
-            publics: Publics,
-            secrets: Secrets,
-        ) -> Proof {
+        pub fn create(transcript: &mut Transcript, publics: Publics, secrets: Secrets) -> Proof {
             transcript.commit_bytes(b"domain-sep", "committed_values_equal".as_bytes());
             transcript.commit_bytes("B".as_bytes(), publics.B.compress().as_bytes());
             transcript.commit_bytes("A".as_bytes(), publics.A.compress().as_bytes());
@@ -812,12 +769,9 @@ pub mod committed_values_equal {
             transcript.commit_bytes("Cm0".as_bytes(), publics.Cm0.compress().as_bytes());
             transcript.commit_bytes("Cm1".as_bytes(), publics.Cm1.compress().as_bytes());
             let rng_ctor = transcript.fork_transcript();
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("m0".as_bytes(), secrets.m0.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("z0".as_bytes(), secrets.z0.as_bytes());
-            let rng_ctor =
-                rng_ctor.commit_witness_bytes("z1".as_bytes(), secrets.z1.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("m0".as_bytes(), secrets.m0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("z0".as_bytes(), secrets.z0.as_bytes());
+            let rng_ctor = rng_ctor.commit_witness_bytes("z1".as_bytes(), secrets.z1.as_bytes());
             let mut transcript_rng = rng_ctor.reseed_from_rng(&mut thread_rng());
             let rand = Randomnesses {
                 m0: Scalar::random(&mut transcript_rng),
@@ -834,10 +788,8 @@ pub mod committed_values_equal {
                     &[*(publics.A), *(publics.B)],
                 ),
             };
-            transcript
-                .commit_bytes("com Cm0".as_bytes(), commitments.Cm0.compress().as_bytes());
-            transcript
-                .commit_bytes("com Cm1".as_bytes(), commitments.Cm1.compress().as_bytes());
+            transcript.commit_bytes("com Cm0".as_bytes(), commitments.Cm0.compress().as_bytes());
+            transcript.commit_bytes("com Cm1".as_bytes(), commitments.Cm1.compress().as_bytes());
             let challenge = {
                 let mut bytes = [0; 64];
                 transcript.challenge_bytes(b"chal", &mut bytes);
@@ -872,10 +824,8 @@ pub mod committed_values_equal {
             transcript.commit_bytes("P".as_bytes(), publics.P.compress().as_bytes());
             transcript.commit_bytes("Cm0".as_bytes(), publics.Cm0.compress().as_bytes());
             transcript.commit_bytes("Cm1".as_bytes(), publics.Cm1.compress().as_bytes());
-            transcript
-                .commit_bytes("com Cm0".as_bytes(), commitments.Cm0.compress().as_bytes());
-            transcript
-                .commit_bytes("com Cm1".as_bytes(), commitments.Cm1.compress().as_bytes());
+            transcript.commit_bytes("com Cm0".as_bytes(), commitments.Cm0.compress().as_bytes());
+            transcript.commit_bytes("com Cm1".as_bytes(), commitments.Cm1.compress().as_bytes());
             let challenge = {
                 let mut bytes = [0; 64];
                 transcript.challenge_bytes(b"chal", &mut bytes);
@@ -889,4 +839,3 @@ pub mod committed_values_equal {
         }
     }
 }
-
