@@ -58,6 +58,7 @@ pub const NUMBER_OF_ATTRIBUTES: usize =
 /// attributes, they must be accompanied by a proof that they are correctly
 /// formed with respect to the `SignalUser`'s `public_key, an elGamal encryption
 /// public key.
+#[derive(Debug, Eq, PartialEq)]
 pub struct SignalCredentialBlindRequest {
     /// If the `request` has `encrypted_attributes` it must also contain a
     /// zero-knowledge proof showing that:
@@ -76,6 +77,7 @@ pub struct SignalCredentialBlindIssuance {
     pub issuance: CredentialBlindIssuance,
 }
 
+#[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct SignalCredentialRequest {
     pub roster_entry: RosterEntry,
@@ -125,7 +127,7 @@ impl SignalCredentialRequest {
 
 pub type SignalCredentialIssuance = CredentialIssuance;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SignalCredentialPresentation {
     /// The user's corresponding `RosterEntry` in the `GroupMembershipRoster`.
     pub roster_entry: RosterEntry,
@@ -196,6 +198,7 @@ pub type SignalCredential = Credential;
 /// This type is used to cause the additional proof methods called by the issuer
 /// to only be callable if the issuer has previously successfully called
 /// `SignalIssuer.verify()`.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerifiedSignalCredential(pub(crate) SignalCredentialPresentation);
 
 impl VerifiedSignalCredential {

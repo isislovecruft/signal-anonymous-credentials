@@ -74,7 +74,7 @@ impl<'a> From<&'a Scalar> for Message {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Encryption {
     pub commitment: RistrettoPoint,
     pub encryption: RistrettoPoint,

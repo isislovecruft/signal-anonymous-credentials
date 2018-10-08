@@ -116,6 +116,7 @@ impl Credential {
 /// attributes, they must be accompanied by a proof that they are correctly
 /// formed with respect to the `User`'s `public_key, an elGamal encryption
 /// public key.
+#[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct CredentialBlindRequest {
     /// An optional vector of credential attributes which are revealed to the issuer.
@@ -134,6 +135,7 @@ pub struct CredentialBlindRequest {
 }
 
 /// An blinded issuance of a `Credential`.
+#[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct CredentialBlindIssuance {
     pub proof: issuance_blinded::Proof,
@@ -232,7 +234,7 @@ impl CredentialIssuance {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct CredentialPresentation {
     /// A Pedersen commitment to the rerandomised `mac` value in the
@@ -340,7 +342,7 @@ impl CredentialPresentation {
 /// This type is used to cause the additional proof methods called by the issuer
 /// to only be callable if the issuer has previously successfully called
 /// `Issuer.verify()`.
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct VerifiedCredential(pub CredentialPresentation);
 
