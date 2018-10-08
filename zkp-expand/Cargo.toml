@@ -1,0 +1,22 @@
+[package]
+name = "zkp-expand"
+version = "0.1.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+edition = "2018"
+
+[dependencies]
+serde = { version = "1" }
+serde_derive = { version = "1" }
+zkp = { version = "0.4",  default-features = false }
+
+[replace]
+"zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/stuff" }
+
+[features]
+default = [ "nightly"]
+std = [ "zkp/std" ]
+nightly = [ "zkp/nightly" ]
+alloc = [ "zkp/alloc" ]
+u32_backend = [ "zkp/u32_backend" ]
+u64_backend = [ "zkp/u64_backend" ]
+avx2_backend = [ "zkp/avx2_backend" ]
