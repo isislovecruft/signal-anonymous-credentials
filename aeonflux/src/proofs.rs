@@ -108,3 +108,14 @@ create_nipk!(valid_credential,
              Cm0 = (P * m0 + A * z0),
              V = (X0 * z0 + A * minus_zQ)
 );
+
+/// Prove that the committed attribute in a credential, `Cm0`, is a commitment
+/// to the same underlying value as in another commitment, `Cm1`.
+create_nipk!(committed_values_equal,
+             (m0, z0, z1),
+             (B, A, P, Cm0, Cm1)
+             :
+             // ECDLEQ over the two entries to prove equivalence of committed values:
+             Cm0 = (P * m0 + A * z0),
+             Cm1 = (A * m0 + B * z1)
+);

@@ -63,12 +63,3 @@ create_nipk!(revealed_attributes,
              :
              roster_entry_commitment_number = (h * phone_number + g * nonce)
 );
-
-create_nipk!(roster_membership,
-             (m0, z0, nonce),
-             (B, A, P, Cm0, RosterEntryPhoneNumberCommitment)
-             :
-             // ECDLEQ over the two entries to prove equivalence of committed values:
-             Cm0 = (P * m0 + A * z0),
-             RosterEntryPhoneNumberCommitment = (A * m0 + B * nonce)
-);

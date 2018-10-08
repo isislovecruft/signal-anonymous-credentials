@@ -23,6 +23,7 @@ use aeonflux::credential::CredentialPresentation;
 use aeonflux::credential::CredentialRequest;
 use aeonflux::credential::VerifiedCredential;
 use aeonflux::errors::CredentialError;
+use aeonflux::proofs::committed_values_equal;
 use aeonflux::proofs::valid_credential;
 
 use bincode::{deserialize, serialize};
@@ -31,7 +32,6 @@ use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::ristretto::RistrettoPoint;
 
 use proofs::revealed_attributes;
-use proofs::roster_membership;
 
 use roster::SIZEOF_ROSTER_ENTRY;
 use roster::RosterEntry;
@@ -129,10 +129,13 @@ pub type SignalCredentialIssuance = CredentialIssuance;
 pub struct SignalCredentialPresentation {
     /// The user's corresponding `RosterEntry` in the `GroupMembershipRoster`.
     pub roster_entry: RosterEntry,
+    /// A `CredentialPresentation` showing that this credential is valid.
     pub presentation: CredentialPresentation,
-    /// An `roster_membership::Proof` attesting that the user is in a
-    /// `GroupMembershipRoster`.
-    pub roster_membership_proof: roster_membership::Proof,
+    /// Create a zero-knowledge proof showing that if the aMAC on our
+    /// credential verifies successfully, that the underlying value in the
+    /// commitment to our credential attribute is the same as the underlying
+    /// committed value in a `GroupMembershipRoster`.
+    pub roster_membership_proof: committed_values_equal::Proof,
 }
 
 impl SignalCredentialPresentation {
@@ -148,7 +151,7 @@ impl SignalCredentialPresentation {
         let roster_entry = RosterEntry::from_bytes(&bytes[00..RE])?;
         let presentation = CredentialPresentation::from_bytes(&bytes[RE..RE+SIZEOF_CREDENTIAL_PRESENTATION])?;
 
-        let roster_membership_proof: roster_membership::Proof =
+        let roster_membership_proof: committed_values_equal::Proof =
             match deserialize(&bytes[RE+SIZEOF_CREDENTIAL_PRESENTATION..])
         {
             Ok(x)   => x,
@@ -172,7 +175,7 @@ impl SignalCredentialPresentation {
             Ok(x)   => x,
             Err(_x) => {
                 #[cfg(feature = "std")]
-                println!("Error while serializing SignalCredentialPresentation: {}", x);
+                println!("Error while serializing SignalCredentialPresentation: {}", _x);
                 panic!();  // XXX clean this up
             },
         };

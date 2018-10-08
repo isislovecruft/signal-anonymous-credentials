@@ -26,6 +26,7 @@ use aeonflux::parameters::SystemParameters;
 use aeonflux::pedersen::{self, Commitment};
 use aeonflux::user::User;
 use aeonflux::proofs::valid_credential;
+use aeonflux::proofs::committed_values_equal;
 
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
@@ -47,7 +48,6 @@ use phone_number::CommittedPhoneNumber;
 use phone_number::EncryptedPhoneNumber;
 use phone_number::PhoneNumber;
 use proofs::revealed_attributes;
-use proofs::roster_membership;
 use roster::SIZEOF_ROSTER_ENTRY;
 use roster::GroupRosterKey;
 use roster::RosterEntry;
@@ -190,22 +190,26 @@ impl SignalUser {
         let nonces = Nonces::new(rng, NUMBER_OF_ATTRIBUTES);
         let presentation = self.user.show(&nonces, rng)?;
 
+        // Create a zero-knowledge proof showing that if the aMAC on our
+        // credential verifies successfully, that the underlying value in the
+        // commitment to our credential attribute is the same as the underlying
+        // committed value in a group roster entry.
         let mut roster_membership_transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
-        let roster_membership_secrets = roster_membership::Secrets {
+        let roster_membership_secrets = committed_values_equal::Secrets {
             m0: &credential.attributes[0],
             z0: &nonces[0].0,
-            nonce: &self.roster_entry_opening,
+            z1: &self.roster_entry_opening,
         };
-        let roster_membership_publics = roster_membership::Publics {
+        let roster_membership_publics = committed_values_equal::Publics {
             B: &self.user.system_parameters.g,
             A: &self.user.system_parameters.h,
             P: &presentation.rerandomized_nonce.clone(),
             Cm0: &presentation.attributes_blinded[0].into(),
-            RosterEntryPhoneNumberCommitment: &self.roster_entry.committed_phone_number.0.into(),
+            Cm1: &self.roster_entry.committed_phone_number.0.into(),
         };
-        let roster_membership_proof = roster_membership::Proof::create(&mut roster_membership_transcript,
-                                                                       roster_membership_publics,
-                                                                       roster_membership_secrets);
+        let roster_membership_proof = committed_values_equal::Proof::create(&mut roster_membership_transcript,
+                                                                            roster_membership_publics,
+                                                                            roster_membership_secrets);
 
         // XXX Should we be rerandomizing the roster_entry commitment?  The
         //     encryptions won't be rerandomisable, so I believe this should be

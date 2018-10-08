@@ -27,6 +27,7 @@ pub use aeonflux::issuer::IssuerParameters;
 pub use aeonflux::issuer::IssuerSecretKey;
 use aeonflux::parameters::SystemParameters;
 use aeonflux::pedersen::{self, Commitment};
+use aeonflux::proofs::committed_values_equal;
 use aeonflux::proofs::issuance_revealed;
 use aeonflux::proofs::valid_credential;
 
@@ -51,7 +52,6 @@ use credential::VerifiedSignalCredential;
 use errors::RosterError;
 use phone_number::PhoneNumber;
 use proofs::revealed_attributes;
-use proofs::roster_membership;
 use roster::GroupMembershipLevel;
 use roster::GroupMembershipRoster;
 
@@ -210,12 +210,12 @@ impl SignalIssuer {
                 }
         }
 
-        let publics = roster_membership::Publics {
+        let publics = committed_values_equal::Publics {
             B: &self.issuer.system_parameters.g,
             A: &self.issuer.system_parameters.h,
             P: &credential.0.presentation.rerandomized_nonce,
             Cm0: &credential.0.presentation.attributes_blinded[0].clone().into(),
-            RosterEntryPhoneNumberCommitment: &credential.0.roster_entry.committed_phone_number.0.into(),
+            Cm1: &credential.0.roster_entry.committed_phone_number.0.into(),
         };
         let mut transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
 
