@@ -210,3 +210,54 @@ impl VerifiedSignalCredential {
         self.0.to_bytes()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use aeonflux::credential::RevealedAttribute;
+    use aeonflux::nonces::Nonces;
+
+    use issuer::SignalIssuer;
+    use issuer::IssuerParameters;
+    use parameters::SystemParameters;
+    use user::SignalUser;
+
+    use rand::thread_rng;
+
+    const H: [u8; 32] = [ 154, 189, 169, 176, 131,  12,  78, 199,
+                          127,   4, 178,  70, 212, 141, 119, 112,
+                          153, 154, 135,  11, 227, 132, 247,  47,
+                           68, 192,  72, 200,  23,  88,  51,  82, ];
+
+    #[test]
+    fn verified_credential_serialize_deserialize() {
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+
+        let system_parameters: SystemParameters = SystemParameters::from(H);
+        let issuer: SignalIssuer = SignalIssuer::create(system_parameters, &mut issuer_rng);
+        let issuer_parameters: IssuerParameters = issuer.get_issuer_parameters();
+        let alice_phone_number_input: &[u8] = &[1, 4, 1, 5, 5, 5, 5, 1, 2, 3, 4];
+        let mut alice: SignalUser = SignalUser::new(system_parameters,
+                                                    issuer_parameters.clone(),
+                                                    None, // no enncrypted attributes so the key isn't needed
+                                                    alice_phone_number_input.clone(),
+                                                    &mut alice_rng).unwrap();
+        let alice_request: SignalCredentialRequest = alice.obtain();
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request,
+                                                                    &alice_phone_number_input,
+                                                                    &mut issuer_rng).unwrap();
+
+        alice.obtain_finish(Some(&alice_issuance)).unwrap();
+
+        let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng).unwrap();
+        let verified: VerifiedSignalCredential = issuer.verify(alice_presentation).unwrap();
+
+        let serialized = verified.to_bytes();
+        let deserialized = VerifiedSignalCredential::from_bytes(&serialized);
+
+        assert!(deserialized.is_ok());
+        assert!(deserialized.unwrap() == verified);
+    }
+}
