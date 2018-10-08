@@ -18,6 +18,10 @@
 
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
+
+// rustc thinks the MultiscalarMul traits are unused, possibly because
+// their usage occurs in submodules only.
+#[allow(unused_imports)]
 use curve25519_dalek::traits::{MultiscalarMul, VartimeMultiscalarMul};
 
 use merlin::Transcript;

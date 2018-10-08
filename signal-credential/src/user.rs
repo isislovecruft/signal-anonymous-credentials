@@ -32,10 +32,10 @@ use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
 
+use merlin::Transcript;
+
 use rand_core::RngCore;
 use rand_core::CryptoRng;
-
-use zkp::Transcript;
 
 use credential::PRESENTATION_NUMBER_OF_BLINDED_ATTRIBUTES;
 use credential::SignalCredentialBlindIssuance;

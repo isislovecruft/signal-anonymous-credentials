@@ -25,20 +25,21 @@ autobenches = false
 [dependencies]
 aeonflux = { version = "0.1.0", path = "../aeonflux", default-features = false }
 bincode = { version = "1" }
-curve25519-dalek = { version = "0.21", default-features = false }
+curve25519-dalek = { version = "0.21", default-features = false, features = ["serde"] }
 failure = { version = "0.1", default-features = false }
+merlin = { version = "0.2" }
+rand = { version = "0.5", default-features = false }
 rand_core = { version = "0.2.1", default-features = false }
 # TODO The zkp crate currently requires both serde and serde_derive.
 serde = { version = "1" }
 serde_derive = { version = "1" }
-zkp = { version = "0.4", default-features = false }
+# zkp = { version = "0.4", default-features = false }
 
 [dev-dependencies]
 criterion = { version = "0.2" }
-rand = { version = "0.5", default-features = false }
 
-[replace]
-"zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/stuff" }
+# [replace]
+# "zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/stuff" }
 
 [[bench]]
 name = "credential-benchmarks"
@@ -46,10 +47,16 @@ harness = false
 
 [features]
 default = [ "std", "nightly", "u64_backend" ]
-std = [ "aeonflux/std", "curve25519-dalek/std", "zkp/std" ]
-nightly = [ "aeonflux/nightly", "curve25519-dalek/nightly", "zkp/nightly" ]
-alloc = [ "aeonflux/alloc", "curve25519-dalek/alloc", "zkp/alloc" ]
 asm = [ "aeonflux/asm" ]
-u32_backend = [ "aeonflux/u32_backend", "curve25519-dalek/u32_backend", "zkp/u32_backend" ]
-u64_backend = [ "aeonflux/u64_backend", "curve25519-dalek/u64_backend", "zkp/u64_backend" ]
-avx2_backend = [ "aeonflux/avx2_backend", "curve25519-dalek/avx2_backend", "zkp/avx2_backend" ]
+# std = [ "aeonflux/std", "curve25519-dalek/std", "zkp/std" ]
+# nightly = [ "aeonflux/nightly", "curve25519-dalek/nightly", "zkp/nightly" ]
+# alloc = [ "aeonflux/alloc", "curve25519-dalek/alloc", "zkp/alloc" ]
+# u32_backend = [ "aeonflux/u32_backend", "curve25519-dalek/u32_backend", "zkp/u32_backend" ]
+# u64_backend = [ "aeonflux/u64_backend", "curve25519-dalek/u64_backend", "zkp/u64_backend" ]
+# avx2_backend = [ "aeonflux/avx2_backend", "curve25519-dalek/avx2_backend", "zkp/avx2_backend" ]
+std = [ "aeonflux/std", "curve25519-dalek/std" ]
+nightly = [ "aeonflux/nightly", "curve25519-dalek/nightly" ]
+alloc = [ "aeonflux/alloc", "curve25519-dalek/alloc" ]
+u32_backend = [ "aeonflux/u32_backend", "curve25519-dalek/u32_backend" ]
+u64_backend = [ "aeonflux/u64_backend", "curve25519-dalek/u64_backend" ]
+avx2_backend = [ "aeonflux/avx2_backend", "curve25519-dalek/avx2_backend" ]
