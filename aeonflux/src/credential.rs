@@ -398,4 +398,34 @@ mod test {
         assert!(deserialized.is_ok());
         assert!(deserialized.unwrap() == alice_presentation);
     }
+
+    #[test]
+    fn verified_credential_serialize_deserialize() {
+        let mut issuer_rng = thread_rng();
+        let mut alice_rng = thread_rng();
+
+        let system_parameters: SystemParameters = SystemParameters::from(H);
+        let issuer: Issuer = Issuer::create(system_parameters, &mut issuer_rng);
+        let issuer_parameters: IssuerParameters = issuer.get_issuer_parameters();
+        let mut alice: User = User::new(system_parameters,
+                                        issuer_parameters.clone(),
+                                        None); // no encrypted attributes so the key isn't needed
+        let mut alice_attributes: Vec<RevealedAttribute> = Vec::new();
+        alice_attributes.push(Scalar::random(&mut alice_rng));
+        let alice_request: CredentialRequest = alice.obtain(alice_attributes);
+        let alice_issuance: CredentialIssuance = issuer.issue(&alice_request, &mut issuer_rng).unwrap();
+
+        alice.obtain_finish(Some(&alice_issuance)).unwrap();
+
+        let alice_nonces: Nonces = Nonces::new(&mut alice_rng, NUMBER_OF_ATTRIBUTES);
+        let alice_presentation: CredentialPresentation = alice.show(&alice_nonces, &mut alice_rng).unwrap();
+
+        let verified: VerifiedCredential = issuer.verify(&alice_presentation).unwrap();
+
+        let serialized = verified.to_bytes();
+        let deserialized = VerifiedCredential::from_bytes(&serialized);
+
+        assert!(deserialized.is_ok());
+        assert!(deserialized.unwrap() == verified);
+    }
 }
