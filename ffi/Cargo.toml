@@ -5,6 +5,10 @@ authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 description = "C, Java JNI, and JS/Wasm FFI APIs for Signal's anonymous credentials"
 publish = false
 
+[lib]
+name = "credential"
+crate-type = [ "staticlib", "cdylib" ]
+
 [dependencies]
 libc = { version = "0.2", default-features = false }
 rand = { version = "0.5", default-features = false }
