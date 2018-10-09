@@ -14,3 +14,6 @@ crate-type = ["cdylib"]
 [dependencies]
 ffi  = { version = "0.1.0", path = "../ffi", features = ["u32_backend"] }
 wasm-bindgen = { version = "0.2" }
+
+[replace]
+"zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/stuff", default-features = false }
