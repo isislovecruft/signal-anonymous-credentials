@@ -12,6 +12,5 @@
 #![feature(custom_attribute)]
 // #![feature(proc_macro)] // Required for nightly rustc<1.29
 
-#[macro_use]
 extern crate ffi;
 extern crate wasm_bindgen;
