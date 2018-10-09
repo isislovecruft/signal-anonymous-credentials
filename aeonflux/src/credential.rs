@@ -23,6 +23,9 @@ use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use elgamal;
 
 use parameters::NUMBER_OF_ATTRIBUTES;
@@ -111,6 +114,8 @@ impl Credential {
     }
 }
 
+impl_serde_with_to_bytes_and_from_bytes!(Credential);
+
 /// A request from a user for a `Credential`, optionally
 /// containing revealed and encrypted attributes.  If there are encrypted
 /// attributes, they must be accompanied by a proof that they are correctly
@@ -191,6 +196,8 @@ impl CredentialRequest {
     }
 }
 
+impl_serde_with_to_bytes_and_from_bytes!(CredentialRequest);
+
 #[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct CredentialIssuance {
@@ -233,6 +240,8 @@ impl CredentialIssuance {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(CredentialIssuance);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
@@ -335,6 +344,8 @@ impl CredentialPresentation {
     }
 }
 
+impl_serde_with_to_bytes_and_from_bytes!(CredentialPresentation);
+
 /// A `Credential` which has already been verified.
 ///
 /// # Note
@@ -355,6 +366,8 @@ impl VerifiedCredential {
         self.0.to_bytes()
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(VerifiedCredential);
 
 #[cfg(test)]
 mod test {

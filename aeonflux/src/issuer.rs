@@ -24,6 +24,9 @@ use merlin::Transcript;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use credential::Credential;
 use credential::CredentialIssuance;
 use credential::CredentialRequest;
@@ -65,6 +68,8 @@ impl Issuer {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(Issuer);
 
 impl Issuer {
     /// Create a new `Issuer` from some agreed upon `system_parameters`.

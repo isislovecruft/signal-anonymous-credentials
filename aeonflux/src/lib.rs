@@ -17,6 +17,7 @@
 #![cfg_attr(any(not(feature = "std"), feature = "alloc"), feature(alloc))]
 
 #[cfg(feature = "std")]
+#[macro_use]
 extern crate std;
 #[cfg(any(not(feature = "std"), feature = "alloc"))]
 extern crate alloc;
@@ -33,6 +34,10 @@ extern crate serde;
 extern crate serde_derive;
 extern crate sha2;
 extern crate subtle;
+
+// The macros have to come first.
+#[macro_use]
+pub mod macros;
 
 pub mod amacs;
 pub mod credential;

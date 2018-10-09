@@ -29,6 +29,9 @@ use aeonflux::pedersen::{self};
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use errors::PhoneNumberError;
 
 pub const SIZEOF_PHONE_NUMBER: usize = 32;
@@ -73,6 +76,8 @@ impl PhoneNumber {
         self.0.to_bytes().to_vec()
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(PhoneNumber);
 
 impl PhoneNumber {
     /// Convert a `String` containing a canonicalised (as if it were to be
@@ -273,6 +278,8 @@ impl CommittedPhoneNumber {
         self.0.to_bytes()
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(CommittedPhoneNumber);
 
 impl CommittedPhoneNumber {
     pub fn from_phone_number(

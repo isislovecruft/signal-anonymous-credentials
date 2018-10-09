@@ -32,6 +32,9 @@ use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use merlin::Transcript;
 
 use rand_core::RngCore;
@@ -89,6 +92,8 @@ impl SignalUser {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(SignalUser);
 
 impl SignalUser {
     /// DOCDOC

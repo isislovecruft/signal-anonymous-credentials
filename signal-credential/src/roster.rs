@@ -25,6 +25,9 @@ use core::intrinsics::transmute;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use errors::RosterError;
 
 use phone_number::SIZEOF_COMMITTED_PHONE_NUMBER;
@@ -87,6 +90,8 @@ impl RosterEntry {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(RosterEntry);
 
 impl RosterEntry {
     pub fn new(
@@ -228,6 +233,8 @@ impl GroupMembershipRoster {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(GroupMembershipRoster);
 
 impl GroupMembershipRoster {
     pub fn new(group_id: usize, owner: RosterEntry, key: GroupRosterKey) -> GroupMembershipRoster {

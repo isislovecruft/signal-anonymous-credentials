@@ -39,6 +39,9 @@ use merlin::Transcript;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use credential::ISSUANCE_NUMBER_OF_BLINDED_ATTRIBUTES;
 use credential::ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES;
 use credential::NUMBER_OF_ATTRIBUTES;
@@ -72,6 +75,8 @@ impl SignalIssuer {
         self.issuer.to_bytes()
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(SignalIssuer);
 
 impl SignalIssuer {
     /// Create a new `SignalIssuer` with new key material.

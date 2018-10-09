@@ -48,6 +48,9 @@ use curve25519_dalek::ristretto::RistrettoPoint;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use sha2::Sha512;
 
 use errors::MacError;
@@ -150,6 +153,8 @@ impl Tag {
     }
 }
 
+impl_serde_with_to_bytes_and_from_bytes!(Tag);
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(non_snake_case)]
 #[repr(C)]
@@ -193,6 +198,8 @@ impl PublicKey {
         self.Xn.len()
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(PublicKey);
 
 /// A secret key for authenticating and verifying `Tag`s.
 #[derive(Clone, Debug, Default)]
@@ -332,6 +339,8 @@ impl SecretKey {
     }
 }
 
+impl_serde_with_to_bytes_and_from_bytes!(SecretKey);
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct Keypair {
@@ -370,6 +379,8 @@ impl Keypair {
         self.public.len() + self.secret.len()
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(Keypair);
 
 impl Keypair {
     pub fn new<R>(h: &RistrettoPoint, csprng: &mut R) -> Keypair

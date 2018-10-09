@@ -28,6 +28,9 @@ use curve25519_dalek::scalar::Scalar;
 use rand_core::CryptoRng;
 use rand_core::RngCore;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use errors::CredentialError;
 
 pub use nonces::Ephemeral;
@@ -113,6 +116,8 @@ impl PublicKey {
     }
 }
 
+impl_serde_with_to_bytes_and_from_bytes!(PublicKey);
+
 impl PublicKey {
     pub fn encrypt(&self, message: &Message, nonce: &Ephemeral)
         -> Encryption
@@ -158,6 +163,8 @@ impl SecretKey {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(SecretKey);
 
 impl SecretKey {
     pub fn generate<C>(csprng: &mut C) -> SecretKey
@@ -206,6 +213,8 @@ impl Keypair {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(Keypair);
 
 impl Keypair {
     pub fn generate<C>(csprng: &mut C) -> Keypair

@@ -26,6 +26,7 @@ extern crate std;
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 extern crate alloc;
 
+#[macro_use]
 extern crate aeonflux;
 extern crate bincode;
 extern crate curve25519_dalek;
@@ -33,6 +34,7 @@ extern crate merlin;
 extern crate failure;
 extern crate rand;
 extern crate rand_core;
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 

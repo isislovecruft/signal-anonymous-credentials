@@ -31,6 +31,9 @@ use bincode::{deserialize, serialize};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::ristretto::RistrettoPoint;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use proofs::revealed_attributes;
 
 use roster::SIZEOF_ROSTER_ENTRY;
@@ -125,6 +128,8 @@ impl SignalCredentialRequest {
     }
 }
 
+impl_serde_with_to_bytes_and_from_bytes!(SignalCredentialRequest);
+
 pub type SignalCredentialIssuance = CredentialIssuance;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -187,6 +192,8 @@ impl SignalCredentialPresentation {
     }
 }
 
+impl_serde_with_to_bytes_and_from_bytes!(SignalCredentialPresentation);
+
 /// An anonymous credential belonging to a `SignalUser` and issued and verified
 /// by a `SignalIssuer`.
 pub type SignalCredential = Credential;
@@ -210,6 +217,8 @@ impl VerifiedSignalCredential {
         self.0.to_bytes()
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(VerifiedSignalCredential);
 
 #[cfg(test)]
 mod test {

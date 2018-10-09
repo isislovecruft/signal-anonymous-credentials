@@ -24,6 +24,9 @@ use merlin::Transcript;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use amacs;
 use credential::Credential;
 use credential::CredentialIssuance;
@@ -100,6 +103,8 @@ impl User {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(User);
 
 impl User {
     /// DOCDOC

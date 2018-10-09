@@ -22,6 +22,9 @@ use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use errors::CredentialError;
 
 pub const SIZEOF_COMMITMENT: usize = 32;
@@ -75,6 +78,8 @@ impl Commitment {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(Commitment);
 
 impl Commitment {
     /// Create a Pedersen commitment to some `value` using the specified `nonce`

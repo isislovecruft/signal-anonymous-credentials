@@ -19,6 +19,9 @@ use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::de::Visitor;
+
 use errors::CredentialError;
 
 pub const NUMBER_OF_ATTRIBUTES: usize = 1;
@@ -83,6 +86,8 @@ impl SystemParameters {
         v
     }
 }
+
+impl_serde_with_to_bytes_and_from_bytes!(SystemParameters);
 
 // XXX use hyphae notation
 impl From<RistrettoPoint> for SystemParameters {
