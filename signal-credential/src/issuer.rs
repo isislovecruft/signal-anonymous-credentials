@@ -76,7 +76,8 @@ impl SignalIssuer {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(SignalIssuer);
+impl_serde_with_to_bytes_and_from_bytes!(SignalIssuer,
+                                         "A valid byte sequence representing a SignalIssuer");
 
 impl SignalIssuer {
     /// Create a new `SignalIssuer` with new key material.

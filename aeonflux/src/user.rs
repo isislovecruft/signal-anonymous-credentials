@@ -104,7 +104,7 @@ impl User {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(User);
+impl_serde_with_to_bytes_and_from_bytes!(User, "A valid byte sequence representing a User");
 
 impl User {
     /// DOCDOC

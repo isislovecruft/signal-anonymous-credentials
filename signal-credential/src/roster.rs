@@ -91,7 +91,8 @@ impl RosterEntry {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(RosterEntry);
+impl_serde_with_to_bytes_and_from_bytes!(RosterEntry,
+                                         "A valid byte sequence representing a RosterEntry");
 
 impl RosterEntry {
     pub fn new(
@@ -234,7 +235,8 @@ impl GroupMembershipRoster {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(GroupMembershipRoster);
+impl_serde_with_to_bytes_and_from_bytes!(GroupMembershipRoster,
+                                         "A valid byte sequence representing a GroupMembershipRoster");
 
 impl GroupMembershipRoster {
     pub fn new(group_id: usize, owner: RosterEntry, key: GroupRosterKey) -> GroupMembershipRoster {

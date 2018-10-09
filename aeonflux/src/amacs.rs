@@ -153,7 +153,7 @@ impl Tag {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(Tag);
+impl_serde_with_to_bytes_and_from_bytes!(Tag, "A valid byte sequence representing an amacs::Tag");
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(non_snake_case)]
@@ -199,7 +199,7 @@ impl PublicKey {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(PublicKey);
+impl_serde_with_to_bytes_and_from_bytes!(PublicKey, "A valid byte sequence representing an amacs::PublicKey");
 
 /// A secret key for authenticating and verifying `Tag`s.
 #[derive(Clone, Debug, Default)]
@@ -339,7 +339,7 @@ impl SecretKey {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(SecretKey);
+impl_serde_with_to_bytes_and_from_bytes!(SecretKey, "A valid byte sequence representing an amacs::SecretKey");
 
 #[derive(Clone, Debug)]
 #[repr(C)]
@@ -380,7 +380,7 @@ impl Keypair {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(Keypair);
+impl_serde_with_to_bytes_and_from_bytes!(Keypair, "A valid byte sequence representing an amacs::Keypair");
 
 impl Keypair {
     pub fn new<R>(h: &RistrettoPoint, csprng: &mut R) -> Keypair

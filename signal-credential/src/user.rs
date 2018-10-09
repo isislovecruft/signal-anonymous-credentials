@@ -93,7 +93,8 @@ impl SignalUser {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(SignalUser);
+impl_serde_with_to_bytes_and_from_bytes!(SignalUser,
+                                         "A valid byte sequence representing a SignalUser");
 
 impl SignalUser {
     /// DOCDOC

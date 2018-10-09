@@ -69,7 +69,7 @@ impl Issuer {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(Issuer);
+impl_serde_with_to_bytes_and_from_bytes!(Issuer, "A valid byte sequence representing an Issuer");
 
 impl Issuer {
     /// Create a new `Issuer` from some agreed upon `system_parameters`.

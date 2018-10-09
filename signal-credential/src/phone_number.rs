@@ -77,7 +77,8 @@ impl PhoneNumber {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(PhoneNumber);
+impl_serde_with_to_bytes_and_from_bytes!(PhoneNumber,
+                                         "A valid byte sequence representing a PhoneNumber");
 
 impl PhoneNumber {
     /// Convert a `String` containing a canonicalised (as if it were to be
@@ -279,7 +280,8 @@ impl CommittedPhoneNumber {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(CommittedPhoneNumber);
+impl_serde_with_to_bytes_and_from_bytes!(CommittedPhoneNumber,
+                                         "A valid byte sequence representing a CommittedPhoneNumber");
 
 impl CommittedPhoneNumber {
     pub fn from_phone_number(

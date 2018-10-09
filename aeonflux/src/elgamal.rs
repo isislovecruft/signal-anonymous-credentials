@@ -116,7 +116,7 @@ impl PublicKey {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(PublicKey);
+impl_serde_with_to_bytes_and_from_bytes!(PublicKey, "A valid byte sequence representing an elgamal::PublicKey");
 
 impl PublicKey {
     pub fn encrypt(&self, message: &Message, nonce: &Ephemeral)
@@ -164,7 +164,7 @@ impl SecretKey {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(SecretKey);
+impl_serde_with_to_bytes_and_from_bytes!(SecretKey, "A valid byte sequence representing an elamal::SecretKey");
 
 impl SecretKey {
     pub fn generate<C>(csprng: &mut C) -> SecretKey
@@ -214,7 +214,7 @@ impl Keypair {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(Keypair);
+impl_serde_with_to_bytes_and_from_bytes!(Keypair, "A valid byte sequence representing an elgamal::Keypair");
 
 impl Keypair {
     pub fn generate<C>(csprng: &mut C) -> Keypair

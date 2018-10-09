@@ -9,7 +9,7 @@
 
 #[macro_export]
 macro_rules! impl_serde_with_to_bytes_and_from_bytes {
-    ($t:tt) => {
+    ($t:tt, $expecting:expr) => {
         impl Serialize for $t {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
                 where S: Serializer
@@ -28,7 +28,7 @@ macro_rules! impl_serde_with_to_bytes_and_from_bytes {
                     type Value = $t;
 
                     fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                        formatter.write_str(&format!("A valid byte sequence representing a {}", stringify!($t)))
+                        formatter.write_str($expecting)
                     }
 
                     fn visit_bytes<E>(self, v: &[u8]) -> Result<$t, E>

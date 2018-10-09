@@ -114,7 +114,7 @@ impl Credential {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(Credential);
+impl_serde_with_to_bytes_and_from_bytes!(Credential, "A valid byte sequence representing a Credential");
 
 /// A request from a user for a `Credential`, optionally
 /// containing revealed and encrypted attributes.  If there are encrypted
@@ -196,7 +196,8 @@ impl CredentialRequest {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(CredentialRequest);
+impl_serde_with_to_bytes_and_from_bytes!(CredentialRequest,
+                                         "A valid byte sequence representing a CredentialRequest");
 
 #[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
@@ -241,7 +242,8 @@ impl CredentialIssuance {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(CredentialIssuance);
+impl_serde_with_to_bytes_and_from_bytes!(CredentialIssuance,
+                                         "A valid byte sequence representing a CredentialIssuance");
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
@@ -344,7 +346,8 @@ impl CredentialPresentation {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(CredentialPresentation);
+impl_serde_with_to_bytes_and_from_bytes!(CredentialPresentation,
+                                         "A valid byte sequence representing a CredentialPresentation");
 
 /// A `Credential` which has already been verified.
 ///
@@ -367,7 +370,8 @@ impl VerifiedCredential {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(VerifiedCredential);
+impl_serde_with_to_bytes_and_from_bytes!(VerifiedCredential,
+                                         "A valid byte sequence representing a VerifiedCredential");
 
 #[cfg(test)]
 mod test {

@@ -128,7 +128,8 @@ impl SignalCredentialRequest {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(SignalCredentialRequest);
+impl_serde_with_to_bytes_and_from_bytes!(SignalCredentialRequest,
+                                         "A valid byte sequence representing a SignalCredentialRequest");
 
 pub type SignalCredentialIssuance = CredentialIssuance;
 
@@ -192,7 +193,8 @@ impl SignalCredentialPresentation {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(SignalCredentialPresentation);
+impl_serde_with_to_bytes_and_from_bytes!(SignalCredentialPresentation,
+                                         "A valid byte sequence representing a SignalCredentialPresentation");
 
 /// An anonymous credential belonging to a `SignalUser` and issued and verified
 /// by a `SignalIssuer`.
@@ -218,7 +220,8 @@ impl VerifiedSignalCredential {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(VerifiedSignalCredential);
+impl_serde_with_to_bytes_and_from_bytes!(VerifiedSignalCredential,
+                                         "A valid byte sequence representing a VerifiedSignalCredential");
 
 #[cfg(test)]
 mod test {

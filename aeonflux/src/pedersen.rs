@@ -79,7 +79,8 @@ impl Commitment {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(Commitment);
+impl_serde_with_to_bytes_and_from_bytes!(Commitment,
+                                         "A valid byte sequence representing a pedersen::Commitment");
 
 impl Commitment {
     /// Create a Pedersen commitment to some `value` using the specified `nonce`

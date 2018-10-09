@@ -87,7 +87,8 @@ impl SystemParameters {
     }
 }
 
-impl_serde_with_to_bytes_and_from_bytes!(SystemParameters);
+impl_serde_with_to_bytes_and_from_bytes!(SystemParameters,
+                                         "A valid byte sequence representing a SystemParameters");
 
 // XXX use hyphae notation
 impl From<RistrettoPoint> for SystemParameters {
