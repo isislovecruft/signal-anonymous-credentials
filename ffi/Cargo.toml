@@ -14,9 +14,6 @@ libc = { version = "0.2", default-features = false }
 rand = { version = "0.5", default-features = false }
 signal-credential = { version = "*", path = "../signal-credential", default-features = false }
 
-[replace]
-"zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/stuff", default-features = false }
-
 [features]
 default = [ "nightly", "alloc" ]
 alloc = [ "signal-credential/alloc" ]
