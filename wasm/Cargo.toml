@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 edition = "2018"
 
+# NOTE: Having a cdylib crate (required for wasm) requires a dynamically linked
+#       std/core Rust library, which is compiled to rely on the behaviour of
+#       panics, and thus we cannot use `[profile.release] panic = abort`.
 [lib]
 name = "credential"
 crate-type = ["cdylib"]
