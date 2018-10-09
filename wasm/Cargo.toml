@@ -2,7 +2,6 @@
 name = "wasm"
 version = "0.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
-edition = "2018"
 
 # NOTE: Having a cdylib crate (required for wasm) requires a dynamically linked
 #       std/core Rust library, which is compiled to rely on the behaviour of
@@ -11,9 +10,15 @@ edition = "2018"
 name = "credential"
 crate-type = ["cdylib"]
 
+[dependencies.signal-credential]
+version = "0.1"
+path = "../signal-credential"
+default-features = false
+features = ["std", "nightly", "u32_backend"]
+
 [dependencies]
-ffi  = { version = "0.1.0", path = "../ffi", features = ["u32_backend"] }
-wasm-bindgen = { version = "0.2" }
+rand = { version = "0.5" }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 
 [replace]
 "zkp:0.4.3" = { git = "https://github.com/isislovecruft/zkp", branch = "fix/stuff", default-features = false }

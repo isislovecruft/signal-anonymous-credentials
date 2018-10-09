@@ -12,5 +12,8 @@
 #![feature(custom_attribute)]
 // #![feature(proc_macro)] // Required for nightly rustc<1.29
 
-extern crate ffi;
+extern crate rand;
+extern crate signal_credential;
 extern crate wasm_bindgen;
+
+pub mod js;
