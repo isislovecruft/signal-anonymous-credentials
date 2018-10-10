@@ -26,14 +26,14 @@
 
 /* Begin PBXFileReference section */
 		1EE1870D0351F326B0A1E8A8 /* Pods_Credential.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Credential.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		56E732F70165C339BCF59CE3 /* Pods-Credential.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Credential.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Credential/Pods-Credential.debug.xcconfig"; sourceTree = "<group>"; };
 		637ED7BF216EAA2700003D99 /* libcredential.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcredential.a; path = Credential.xcodeproj/../../ffi/target/universal/release/libcredential.a; sourceTree = "<group>"; };
 		63B304AF216D58400062D8F2 /* libCredential.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCredential.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		63B304B2216D58400062D8F2 /* Credential.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Credential.swift; sourceTree = "<group>"; };
 		63B304BB216D637E0062D8F2 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 		63B304BE216D679A0062D8F2 /* credential-bridging-header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "credential-bridging-header.h"; sourceTree = "<group>"; };
 		63B304C1216D886D0062D8F2 /* credential.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = credential.h; sourceTree = "<group>"; };
-		8484E038630B2A938D99EC49 /* Pods-Credential.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Credential.release.xcconfig"; path = "Pods/Target Support Files/Pods-Credential/Pods-Credential.release.xcconfig"; sourceTree = "<group>"; };
+		C9D715BA82556BB48BBBD87F /* Pods-Credential.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Credential.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Credential/Pods-Credential.debug.xcconfig"; sourceTree = "<group>"; };
+		F78441048F464216CF06B070 /* Pods-Credential.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Credential.release.xcconfig"; path = "Pods/Target Support Files/Pods-Credential/Pods-Credential.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,13 +49,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		03524890B4023FD7EA414F65 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				C9D715BA82556BB48BBBD87F /* Pods-Credential.debug.xcconfig */,
+				F78441048F464216CF06B070 /* Pods-Credential.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
 		63B304A6216D58400062D8F2 = {
 			isa = PBXGroup;
 			children = (
 				63B304B1216D58400062D8F2 /* Credential */,
 				63B304B0216D58400062D8F2 /* Products */,
 				9C797F669CB53FD91DECD278 /* Frameworks */,
-				657123F1EB87D1FB66BF050F /* Pods */,
+				03524890B4023FD7EA414F65 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -75,15 +84,6 @@
 				63B304B2216D58400062D8F2 /* Credential.swift */,
 			);
 			path = Credential;
-			sourceTree = "<group>";
-		};
-		657123F1EB87D1FB66BF050F /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				56E732F70165C339BCF59CE3 /* Pods-Credential.debug.xcconfig */,
-				8484E038630B2A938D99EC49 /* Pods-Credential.release.xcconfig */,
-			);
-			name = Pods;
 			sourceTree = "<group>";
 		};
 		9C797F669CB53FD91DECD278 /* Frameworks */ = {
@@ -300,7 +300,7 @@
 		};
 		63B304B7216D58400062D8F2 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 56E732F70165C339BCF59CE3 /* Pods-Credential.debug.xcconfig */;
+			baseConfigurationReference = C9D715BA82556BB48BBBD87F /* Pods-Credential.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JW976LGH97;
@@ -319,7 +319,7 @@
 		};
 		63B304B8216D58400062D8F2 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8484E038630B2A938D99EC49 /* Pods-Credential.release.xcconfig */;
+			baseConfigurationReference = F78441048F464216CF06B070 /* Pods-Credential.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JW976LGH97;
