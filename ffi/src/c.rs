@@ -60,6 +60,7 @@ pub const LENGTH_SEED: usize = 32;
 pub const LENGTH_SYSTEM_PARAMETERS: u64 = 64;
 pub const LENGTH_ISSUER: u64 = 160;
 pub const LENGTH_ISSUER_PARAMETERS: u64 = 32;
+pub const LENGTH_ISSUER_KEYPAIR: u64 = 96;
 pub const LENGTH_USER: u64 = 416;
 pub const LENGTH_CREDENTIAL_REQUEST: u64 = 248;
 pub const LENGTH_CREDENTIAL_ISSUANCE: u64 = 328;
@@ -112,6 +113,18 @@ pub extern "C" fn issuer_new(
     let keys = deserialize_or_return!(AmacsKeypair, keypair_length, keypair);
     let issuer: SignalIssuer = SignalIssuer::new(system_params, keys);
     let serialized: Vec<u8> = serialize_or_return!(&issuer);
+
+    slice_to_len_and_ptr!(&serialized[..])
+}
+
+#[no_mangle]
+pub extern "C" fn issuer_get_keypair(
+    issuer: *const uint8_t,
+    issuer_length: uint64_t,
+) -> buf_t
+{
+    let issuer = deserialize_or_return!(SignalIssuer, issuer_length, issuer);
+    let serialized: Vec<u8> = serialize_or_return!(&issuer.issuer.keypair);
 
     slice_to_len_and_ptr!(&serialized[..])
 }
@@ -487,6 +500,26 @@ mod test {
                                                                   issuer_parameters.ptr);
 
         assert!(deserialized.Xn.get(0).is_some());
+    }
+
+    #[allow(unused_variables)]
+    #[test]
+    fn test_issuer_get_keypair() {
+        let system_parameters = system_parameters_create(H.as_ptr());
+        let issuer = issuer_create(system_parameters.ptr,
+                                   system_parameters.len,
+                                   SEED.as_ptr());
+        let issuer_keypair = issuer_get_keypair(issuer.ptr, issuer.len);
+
+        assert!(issuer_keypair.len != 0);
+        assert!(issuer_keypair.len == LENGTH_ISSUER_KEYPAIR,
+                "issuer parameters length was {}", issuer_keypair.len);
+
+        let deserialized: AmacsKeypair = assert_deserialized!(AmacsKeypair,
+                                                              issuer_keypair.len,
+                                                              issuer_keypair.ptr);
+
+        assert!(deserialized.public.Xn.get(0).is_some());
     }
 
     #[allow(unused_variables)]
