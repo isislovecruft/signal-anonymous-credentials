@@ -7,6 +7,16 @@
 
 #include <stdint.h>
 
+const uint LENGTH_SYSTEM_PARAMETERS = 64;
+const uint LENGTH_ISSUER = 160;
+const uint LENGTH_ISSUER_PARAMETERS = 32;
+const uint LENGTH_ISSUER_KEYPAIR = 96;
+const uint LENGTH_USER = 416;
+const uint LENGTH_CREDENTIAL_REQUEST = 248;
+const uint LENGTH_CREDENTIAL_ISSUANCE = 328;
+const uint LENGTH_CREDENTIAL_PRESENTATION = 512;
+const uint LENGTH_VERIFIED_CREDENTIAL = 512;
+
 // RUST_C_COUPLED: ffi/src/c.rs buf_t
 typedef struct buf_s {
   const uint64_t len;
@@ -23,6 +33,8 @@ buf_t issuer_new(const uint8_t* system_parameters,
                  const uint64_t keypair_length);
 buf_t issuer_get_issuer_parameters(const uint8_t* issuer,
                                    const uint64_t issuer_length);
+buf_t issuer_get_keypair(const uint8_t* issuer,
+			 const uint64_t issuer_length);
 buf_t issuer_issue(const uint8_t* issuer,
                    const uint64_t issuer_length,
                    const uint8_t* seed,
