@@ -55,8 +55,16 @@ use signal_credential::user::SignalUser;
 
 pub type SignalRng = ChaChaRng;
 
-const LENGTH_H: usize = 32;
-const LENGTH_SEED: usize = 32;
+pub const LENGTH_H: usize = 32;
+pub const LENGTH_SEED: usize = 32;
+pub const LENGTH_SYSTEM_PARAMETERS: u64 = 64;
+pub const LENGTH_ISSUER: u64 = 160;
+pub const LENGTH_ISSUER_PARAMETERS: u64 = 32;
+pub const LENGTH_USER: u64 = 416;
+pub const LENGTH_CREDENTIAL_REQUEST: u64 = 248;
+pub const LENGTH_CREDENTIAL_ISSUANCE: u64 = 328;
+pub const LENGTH_CREDENTIAL_PRESENTATION: u64 = 512;
+pub const LENGTH_VERIFIED_CREDENTIAL: u64 = 512;
 
 #[repr(C)]
 pub struct buf_t {
@@ -421,6 +429,9 @@ mod test {
     fn test_system_parameters_create () {
         let system_parameters = system_parameters_create(H.as_ptr());
 
+        assert!(system_parameters.len != 0);
+        assert!(system_parameters.len == LENGTH_SYSTEM_PARAMETERS);
+
         let deserialized: SystemParameters = assert_deserialized!(SystemParameters,
                                                                   system_parameters.len,
                                                                   system_parameters.ptr);
@@ -434,7 +445,7 @@ mod test {
                                    SEED.as_ptr());
 
         assert!(issuer.len != 0);
-        assert!(issuer.len == 160, "issuer length was {}", issuer.len);
+        assert!(issuer.len == LENGTH_ISSUER, "issuer length was {}", issuer.len);
 
         let deserialized: SignalIssuer = assert_deserialized!(SignalIssuer,
                                                               issuer.len,
@@ -452,6 +463,9 @@ mod test {
                                 ISSUER_KEYPAIR.as_ptr(),
                                 ISSUER_KEYPAIR.len() as uint64_t);
 
+        assert!(issuer.len != 0);
+        assert!(issuer.len == LENGTH_ISSUER, "issuer length was {}", issuer.len);
+
         assert_deserialized!(SignalIssuer, issuer.len, issuer.ptr);
     }
 
@@ -465,7 +479,8 @@ mod test {
         let issuer_parameters = issuer_get_issuer_parameters(issuer.ptr, issuer.len);
 
         assert!(issuer_parameters.len != 0);
-        assert!(issuer_parameters.len == 32, "issuer parameters length was {}", issuer_parameters.len);
+        assert!(issuer_parameters.len == LENGTH_ISSUER_PARAMETERS,
+                "issuer parameters length was {}", issuer_parameters.len);
 
         let deserialized: IssuerParameters = assert_deserialized!(IssuerParameters,
                                                                   issuer_parameters.len,
@@ -490,8 +505,9 @@ mod test {
                             issuer_parameters.ptr,
                             issuer_parameters.len,
                             SEED.as_ptr());
+
         assert!(user.len != 0);
-        assert!(user.len == 416, "user length was {}", user.len);
+        assert!(user.len == LENGTH_USER, "user length was {}", user.len);
     }
 
     #[allow(unused_variables)]
@@ -513,7 +529,8 @@ mod test {
         let request = user_obtain(user.ptr, user.len);
 
         assert!(request.len != 0);
-        assert!(request.len == 248, "request length was {}", request.len);
+        assert!(request.len == LENGTH_CREDENTIAL_REQUEST,
+                "request length was {}", request.len);
     }
 
     #[allow(unused_variables)]
@@ -539,8 +556,10 @@ mod test {
                                     request.len,
                                     PHONE_NUMBER.as_ptr(),
                                     PHONE_NUMBER.len() as uint64_t);
+
         assert!(issuance.len != 0);
-        assert!(issuance.len == 328, "issuance length was {}", issuance.len);
+        assert!(issuance.len == LENGTH_CREDENTIAL_ISSUANCE,
+                "issuance length was {}", issuance.len);
     }
 
     #[allow(unused_variables)]
@@ -570,6 +589,7 @@ mod test {
                                           user.len,
                                           issuance.ptr,
                                           issuance.len);
+
         assert!(new_user.len != 0);
         assert!(new_user.len == user.len);
     }
@@ -579,6 +599,10 @@ mod test {
         let presentation = user_show(USER_WITH_CREDENTIAL.as_ptr(),
                                      USER_WITH_CREDENTIAL.len() as uint64_t,
                                      SEED.as_ptr());
+
+        assert!(presentation.len != 0);
+        assert!(presentation.len == LENGTH_CREDENTIAL_PRESENTATION,
+                "presentation length was {}", presentation.len);
 
         assert_deserialized!(SignalCredentialPresentation, presentation.len, presentation.ptr);
     }
@@ -590,6 +614,10 @@ mod test {
                                    SEED.as_ptr());
         let verified = issuer_verify(issuer.ptr, issuer.len,
                                      PRESENTATION.as_ptr(), PRESENTATION.len() as uint64_t);
+
+        assert!(verified.len != 0);
+        assert!(verified.len == LENGTH_VERIFIED_CREDENTIAL,
+                "verified length was {}", verified.len);
 
         assert_deserialized!(VerifiedSignalCredential, verified.len, verified.ptr);
     }
