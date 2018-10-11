@@ -12,25 +12,16 @@ use alloc::vec::Vec;
 #[cfg(all(not(feature = "alloc"), feature = "std"))]
 use std::vec::Vec;
 
-use aeonflux::amacs::{self, Tag};
-use aeonflux::credential::CredentialPresentation;
-use aeonflux::credential::CredentialRequest;
-use aeonflux::credential::EncryptedAttribute;
-use aeonflux::credential::RevealedAttribute;
 use aeonflux::elgamal::{self};
 use aeonflux::errors::CredentialError;
 use aeonflux::issuer::IssuerParameters;
 use aeonflux::nonces::Nonces;
 use aeonflux::parameters::NUMBER_OF_ATTRIBUTES;
 use aeonflux::parameters::SystemParameters;
-use aeonflux::pedersen::{self, Commitment};
 use aeonflux::user::User;
-use aeonflux::proofs::valid_credential;
 use aeonflux::proofs::committed_values_equal;
 
-use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::traits::Identity;
 
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
@@ -40,17 +31,11 @@ use merlin::Transcript;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
-use credential::PRESENTATION_NUMBER_OF_BLINDED_ATTRIBUTES;
-use credential::SignalCredentialBlindIssuance;
-use credential::SignalCredentialBlindRequest;
 use credential::SignalCredentialIssuance;
 use credential::SignalCredentialPresentation;
-use credential::SignalCredentialRequest;
 use credential::SignalCredential;
 use phone_number::CommittedPhoneNumber;
-use phone_number::EncryptedPhoneNumber;
 use phone_number::PhoneNumber;
-use proofs::revealed_attributes;
 use roster::SIZEOF_ROSTER_ENTRY;
 use roster::GroupRosterKey;
 use roster::RosterEntry;

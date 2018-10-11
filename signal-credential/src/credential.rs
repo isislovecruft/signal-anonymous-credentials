@@ -21,15 +21,10 @@ use aeonflux::credential::CredentialBlindIssuance;
 use aeonflux::credential::CredentialIssuance;
 use aeonflux::credential::CredentialPresentation;
 use aeonflux::credential::CredentialRequest;
-use aeonflux::credential::VerifiedCredential;
 use aeonflux::errors::CredentialError;
 use aeonflux::proofs::committed_values_equal;
-use aeonflux::proofs::valid_credential;
 
 use bincode::{deserialize, serialize};
-
-use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::ristretto::RistrettoPoint;
 
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
@@ -226,9 +221,6 @@ impl_serde_with_to_bytes_and_from_bytes!(VerifiedSignalCredential,
 #[cfg(test)]
 mod test {
     use super::*;
-
-    use aeonflux::credential::RevealedAttribute;
-    use aeonflux::nonces::Nonces;
 
     use issuer::SignalIssuer;
     use issuer::IssuerParameters;

@@ -16,8 +16,6 @@
 // We denote group elements with capital and scalars with lowercased names.
 #![allow(non_snake_case)]
 
-#![allow(unused_imports)] // XXX remove this
-
 #![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 
 #[cfg(feature = "std")]

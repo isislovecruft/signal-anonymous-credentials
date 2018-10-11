@@ -22,7 +22,6 @@ use std::mem::transmute;
 #[cfg(not(feature = "std"))]
 use core::intrinsics::transmute;
 
-use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
@@ -31,7 +30,6 @@ use serde::de::Visitor;
 use errors::RosterError;
 
 use phone_number::SIZEOF_COMMITTED_PHONE_NUMBER;
-use phone_number::SIZEOF_PHONE_NUMBER;
 use phone_number::CommittedPhoneNumber;
 use phone_number::PhoneNumber;
 

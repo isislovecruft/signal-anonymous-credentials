@@ -13,26 +13,14 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 use aeonflux::amacs::{self};
-use aeonflux::amacs::Tag;
-use aeonflux::credential::Credential;
-use aeonflux::credential::CredentialIssuance;
-use aeonflux::credential::CredentialPresentation;
 use aeonflux::credential::CredentialRequest;
-use aeonflux::credential::EncryptedAttribute;
 use aeonflux::credential::RevealedAttribute;
-use aeonflux::credential::VerifiedCredential;
 use aeonflux::errors::CredentialError;
 use aeonflux::issuer::Issuer;
 pub use aeonflux::issuer::IssuerParameters;
 pub use aeonflux::issuer::IssuerSecretKey;
 use aeonflux::parameters::SystemParameters;
-use aeonflux::pedersen::{self, Commitment};
 use aeonflux::proofs::committed_values_equal;
-use aeonflux::proofs::issuance_revealed;
-use aeonflux::proofs::valid_credential;
-
-use curve25519_dalek::ristretto::RistrettoPoint;
-use curve25519_dalek::scalar::Scalar;
 
 use merlin::Transcript;
 
@@ -42,19 +30,12 @@ use rand_core::CryptoRng;
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
 
-use credential::ISSUANCE_NUMBER_OF_BLINDED_ATTRIBUTES;
-use credential::ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES;
 use credential::NUMBER_OF_ATTRIBUTES;
-use credential::SignalCredential;
-use credential::SignalCredentialBlindIssuance;
-use credential::SignalCredentialBlindRequest;
 use credential::SignalCredentialIssuance;
-use credential::SignalCredentialRequest;
 use credential::SignalCredentialPresentation;
 use credential::VerifiedSignalCredential;
 use errors::RosterError;
 use phone_number::PhoneNumber;
-use proofs::revealed_attributes;
 use roster::GroupMembershipLevel;
 use roster::GroupMembershipRoster;
 
