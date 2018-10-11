@@ -217,9 +217,6 @@ impl SignalUser {
                                                                             roster_membership_publics,
                                                                             roster_membership_secrets);
 
-        // XXX Should we be rerandomizing the roster_entry commitment?  The
-        //     encryptions won't be rerandomisable, so I believe this should be
-        //     unnecessary.
         Ok(SignalCredentialPresentation {
             presentation: presentation,
             roster_entry: self.roster_entry.clone(),
