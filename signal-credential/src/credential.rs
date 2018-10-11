@@ -237,17 +237,12 @@ mod test {
 
     use rand::thread_rng;
 
-    const H: [u8; 32] = [ 154, 189, 169, 176, 131,  12,  78, 199,
-                          127,   4, 178,  70, 212, 141, 119, 112,
-                          153, 154, 135,  11, 227, 132, 247,  47,
-                           68, 192,  72, 200,  23,  88,  51,  82, ];
-
     #[test]
     fn verified_credential_serialize_deserialize() {
         let mut issuer_rng = thread_rng();
         let mut alice_rng = thread_rng();
 
-        let system_parameters: SystemParameters = SystemParameters::from(H);
+        let system_parameters: SystemParameters = SystemParameters::hunt_and_peck(&mut issuer_rng);
         let issuer: SignalIssuer = SignalIssuer::create(system_parameters, &mut issuer_rng);
         let issuer_parameters: IssuerParameters = issuer.get_issuer_parameters();
         let alice_phone_number_input: &[u8] = &[1, 4, 1, 5, 5, 5, 5, 1, 2, 3, 4];

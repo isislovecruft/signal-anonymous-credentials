@@ -21,11 +21,6 @@ use signal_credential::roster::GroupMembershipRoster;
 use signal_credential::roster::GroupRosterKey;
 use signal_credential::user::SignalUser;
 
-const H: [u8; 32] = [ 184, 238, 220,  64,   5, 247,  91, 135,
-                      93, 125, 218,  60,  36, 165, 166, 178,
-                      118, 188,  77,  27, 133, 146, 193, 133,
-                      234,  95,  69, 227, 213, 197,  84,  98, ];
-
 #[test]
 fn credential_issuance_and_presentation() {
     // Create RNGs for each party.
@@ -34,7 +29,7 @@ fn credential_issuance_and_presentation() {
     let mut bob_rng = thread_rng();
 
     // Create an issuer
-    let system_parameters: SystemParameters = SystemParameters::from(H);
+    let system_parameters: SystemParameters = SystemParameters::hunt_and_peck(&mut issuer_rng);
     let issuer: SignalIssuer = SignalIssuer::create(system_parameters, &mut issuer_rng);
 
     // Get the issuer's parameters so we can advertise them to new users:
