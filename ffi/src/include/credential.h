@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+const uint LENGTH_SEED = 32;
 const uint LENGTH_SYSTEM_PARAMETERS = 64;
 const uint LENGTH_ISSUER = 160;
 const uint LENGTH_ISSUER_PARAMETERS = 32;
