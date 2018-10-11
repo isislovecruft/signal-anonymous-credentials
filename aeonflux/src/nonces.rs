@@ -44,6 +44,17 @@ impl From<Scalar> for Ephemeral {
     }
 }
 
+impl Ephemeral {
+    pub fn new<R>(
+        csprng: &mut R,
+    ) -> Ephemeral
+    where
+        R: CryptoRng + RngCore
+    {
+        Ephemeral(Scalar::random(csprng))
+    }
+}
+
 impl<'s, 'e: 's> From<&'e Ephemeral> for &'s Scalar {
     fn from(source: &'e Ephemeral) -> &'s Scalar {
         &source.0
@@ -159,7 +170,7 @@ impl Nonces {
         let mut v: Vec<Ephemeral> = Vec::with_capacity(size);
 
         for _ in 0..size {
-            v.push(Ephemeral(Scalar::random(csprng)));
+            v.push(Ephemeral::new(csprng));
         }
 
         Nonces(v)

@@ -15,6 +15,7 @@ use std::vec::Vec;
 use aeonflux::elgamal::{self};
 use aeonflux::errors::CredentialError;
 use aeonflux::issuer::IssuerParameters;
+use aeonflux::nonces::Ephemeral;
 use aeonflux::nonces::Nonces;
 use aeonflux::parameters::NUMBER_OF_ATTRIBUTES;
 use aeonflux::parameters::SystemParameters;
@@ -130,12 +131,15 @@ impl SignalUser {
         self.user.obtain_finish(issuance)
     }
 
-    /// Show proof of membership in a roster of signal group users.
+    /// Prove that this credential is valid and show proof of membership in a
+    /// roster of signal group users.
     ///
     /// DOCDOC
     pub fn show<R>(
         &self,
         rng: &mut R,
+        roster_entry_commitment: &CommittedPhoneNumber,
+        roster_entry_commitment_opening: &Ephemeral,
     ) -> Result<SignalCredentialPresentation, CredentialError>
     where
         R: RngCore + CryptoRng,
@@ -155,14 +159,14 @@ impl SignalUser {
         let roster_membership_secrets = committed_values_equal::Secrets {
             m0: &credential.attributes[0],
             z0: &nonces[0].0,
-            z1: &self.roster_entry_opening,
+            z1: &roster_entry_commitment_opening.0,
         };
         let roster_membership_publics = committed_values_equal::Publics {
             B: &self.user.system_parameters.g,
             A: &self.user.system_parameters.h,
             P: &presentation.rerandomized_nonce.clone(),
             Cm0: &presentation.attributes_blinded[0].into(),
-            Cm1: &self.roster_entry.committed_phone_number.0.into(),
+            Cm1: &roster_entry_commitment.0.into(),
         };
         let roster_membership_proof = committed_values_equal::Proof::create(&mut roster_membership_transcript,
                                                                             roster_membership_publics,
