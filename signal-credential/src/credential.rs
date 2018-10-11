@@ -251,9 +251,7 @@ mod test {
                                                     None, // no enncrypted attributes so the key isn't needed
                                                     alice_phone_number_input.clone(),
                                                     &mut alice_rng).unwrap();
-        let alice_request: SignalCredentialRequest = alice.obtain();
-        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request,
-                                                                    &alice_phone_number_input,
+        let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_phone_number_input,
                                                                     &mut issuer_rng).unwrap();
 
         alice.obtain_finish(Some(&alice_issuance)).unwrap();

@@ -135,40 +135,6 @@ impl SignalUser {
     }
 
     /// DOCDOC
-    ///
-    /// # Returns
-    ///
-    pub fn obtain(
-        &self,
-    ) -> SignalCredentialRequest
-    {
-        let mut transcript = Transcript::new(b"SIGNAL ISSUANCE REQUEST");
-
-        // Construct a proof that the roster entry is in fact a commitment to our phone_number.
-        let secrets = revealed_attributes::Secrets {
-            nonce: &self.roster_entry_opening,
-            phone_number: &self.phone_number.0,
-        };
-        let publics = revealed_attributes::Publics {
-            g: &self.user.system_parameters.g,
-            h: &self.user.system_parameters.h,
-            roster_entry_commitment_number: &self.roster_entry.committed_phone_number.0.into(),
-        };
-        let proof = revealed_attributes::Proof::create(&mut transcript, publics, secrets);
-
-        let mut attributes: Vec<RevealedAttribute> = Vec::with_capacity(NUMBER_OF_ATTRIBUTES);
-        attributes.push(self.phone_number.0);
-
-        let request = self.user.obtain(attributes);
-
-        SignalCredentialRequest {
-            request: request,
-            proof: proof,
-            roster_entry: self.roster_entry,
-        }
-    }
-
-    /// DOCDOC
     pub fn obtain_finish(
         &mut self,
         // XXX the Option is probably unnecessary, we never call this with None

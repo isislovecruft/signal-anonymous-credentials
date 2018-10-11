@@ -50,21 +50,15 @@ fn credential_issuance_and_presentation() {
                                               bob_phone_number_input.clone(),
                                               &mut bob_rng).unwrap();
 
-    // Form a request for a credential
-    let alice_request: SignalCredentialRequest = alice.obtain();
-
     // Try to get the issuer to give Alice a new credential
-    let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_request,
-                                                                &alice_phone_number_input,
+    let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_phone_number_input,
                                                                 &mut issuer_rng).unwrap();
 
     // Give the result back to Alice for processing
     alice.obtain_finish(Some(&alice_issuance)).unwrap();
         
     // And the same for Bob:
-    let bob_request: SignalCredentialRequest = bob.obtain();
-    let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_request,
-                                                              &bob_phone_number_input,
+    let bob_issuance: SignalCredentialIssuance = issuer.issue(&bob_phone_number_input,
                                                               &mut issuer_rng).unwrap();
 
     bob.obtain_finish(Some(&bob_issuance)).unwrap();

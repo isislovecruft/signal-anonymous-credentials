@@ -126,9 +126,10 @@ impl SignalIssuer {
     ///
     /// # Inputs
     ///
-    /// * `request` is a `SignalCredentialRequest` containing a `proof` that the
-    ///   revealed attributes match those in some commitments, the user's phone
-    ///   number (as a `String`), and the user's `RosterEntry`.
+    /// * `phone_number` is the the user's phone number as bytes, e.g. the phone
+    ///   number `"+14155551234"` should be given as
+    ///   `[0, 0, 1, 4, 1, 5, 5, 5, 5, 1, 2, 3, 4]`.
+    /// * `rng` is an implementation of `rand::RngCore + rand::CryptoRng`.
     ///
     /// # Errors
     ///
@@ -149,38 +150,21 @@ impl SignalIssuer {
     /// A `SignalCredentialRequest` upon successful issuance.
     pub fn issue<R>(
         &self,
-        request: &SignalCredentialRequest,
         phone_number: &[u8],
         rng: &mut R,
     ) -> Result<SignalCredentialIssuance, CredentialError>
     where
         R: RngCore + CryptoRng,
     {
-        // Construct the phone number and check that it matches the attributes.
+        // Construct the phone number and form a credential out of it.
         let number: PhoneNumber = PhoneNumber::try_from_bytes(&phone_number)?;
+        let mut attributes_revealed: Vec<RevealedAttribute> = Vec::with_capacity(NUMBER_OF_ATTRIBUTES);
 
-        if number.0 != request.request.attributes_revealed[0] {
-            return Err(CredentialError::BadAttribute);
-        }
+        attributes_revealed.push(number.0);
 
-        // Create a transcript and feed the context into it
-        let mut request_transcript = Transcript::new(b"SIGNAL ISSUANCE REQUEST");
-        // XXX put the attributes into the transcript first
+        let request: CredentialRequest = CredentialRequest { attributes_revealed };
 
-        // Verify the zero-knowledge proof that the roster entry is a commitment to the phone number.
-        let roster_entry_commitment_number = request.roster_entry.committed_phone_number;
-
-        let revealed_attributes_publics: revealed_attributes::Publics = revealed_attributes::Publics {
-            g: &self.issuer.system_parameters.g,
-            h: &self.issuer.system_parameters.h,
-            roster_entry_commitment_number: &roster_entry_commitment_number.0.into(),
-        };
-
-        if request.proof.verify(&mut request_transcript, revealed_attributes_publics).is_err() {
-            return Err(CredentialError::VerificationFailure);
-        }
-
-        self.issuer.issue(&request.request, rng)
+        self.issuer.issue(&request, rng)
     }
 
     pub fn verify(&self, signal_presentation: SignalCredentialPresentation)
