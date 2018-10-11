@@ -14,10 +14,8 @@ use std::vec::Vec;
 
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_COMPRESSED;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
-use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
-use curve25519_dalek::scalar::Scalar;
 
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
@@ -169,26 +167,6 @@ impl From<[u8; 32]> for SystemParameters {
             g: RISTRETTO_BASEPOINT_POINT,
             h: CompressedRistretto(h).decompress().unwrap(),
         }
-    }
-}
-
-impl From<Scalar> for SystemParameters {
-    /// Construct new system parameters from a `secret`.
-    ///
-    /// The `secret` will be used to derive the basepoint, `h`.
-    ///
-    /// # Inputs
-    ///
-    /// * `secret`, 32 secretly chosen random bytes. This is only supplied by a
-    ///   credential issuer.
-    ///
-    /// # Returns
-    ///
-    /// The `SystemParameters` for an anonymous credential protocol.
-    fn from(secret: Scalar) -> SystemParameters {
-        let h: RistrettoPoint = &secret.reduce() * &RISTRETTO_BASEPOINT_TABLE;
-
-        h.into()
     }
 }
 
