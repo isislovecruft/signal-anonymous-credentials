@@ -50,16 +50,3 @@ create_nipk!(_blind_attributes,
              encrypted_attribute_0_1 = (B * m0 + D * e0),
              roster_entry = (A * m0 + B * nonce)
 );
-
-// XXX This is hacky because the "phone_number" here is actually the
-//     phone_number * h, where phone_number is also public but the zkp crate
-//     won't let us multiply two publics (or let us have a public scalar).
-//
-//     When we pull the code out of the macros the phone_number here
-//     should be a public.
-create_nipk!(revealed_attributes,
-             (nonce, phone_number),
-             (g, h, roster_entry_commitment_number)
-             :
-             roster_entry_commitment_number = (h * phone_number + g * nonce)
-);
