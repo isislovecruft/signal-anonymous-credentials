@@ -102,12 +102,20 @@ class VerifiedCredential {
 }
 
 class SignalIssuer {
+    var keypair = AlgebraicMACKeypair
     var data = [UInt8](repeating: 0, count: Int(LENGTH_ISSUER))
     
     init?(withSeed seed: [UInt8], system_parameters: SystemParameters) {
         guard seed.count == 32 else { return nil }
         
         let buffer = issuer_create(&system_parameters.data, UInt64(system_parameters.data.count), seed)
+        data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
+            Array(UnsafeBufferPointer(start: $0, count: Int(buffer.len)))
+        }
+        self.keypair = AlgebraicMACKeypair(withBytes: data)
+
+        let buffer = issuer_new(&system_parameters.data, UInt64(system_parameters.data.count),
+                                &self.keypair, UInt64(self.keypair.count))
         self.data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
             Array(UnsafeBufferPointer(start: $0, count: Int(buffer.len)))
         }
@@ -121,18 +129,6 @@ class SignalIssuer {
         }
     }
     
-    // XXX cache this
-    func get_keypair() -> AlgebraicMACKeypair? {
-        let buffer = issuer_get_keypair(&self.data, UInt64(self.data.count))
-        let data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
-            Array(UnsafeBufferPointer(start: $0, count: Int(buffer.len)))
-        }
-        let keypair = AlgebraicMACKeypair(withBytes: data)
-        
-        return keypair
-    }
-    
-    // XXX cache this
     func get_parameters() -> IssuerParameters? {
         let buffer = issuer_get_issuer_parameters(&self.data, UInt64(self.data.count))
         let data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
