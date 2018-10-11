@@ -122,16 +122,10 @@ pub fn system_parameters_create(
 ///
 /// # Returns
 ///
-/// A `signal_credential::issuer::SignalIssuer` as a `JsValue`¹.
+/// An `aeonflux::amacs::Keypair` as a `JsValue`¹.
 ///
 /// ¹ Which, by the way, you won't be able to do much of anything with since
 ///   it's internally serialised to literal bytes, so best don't touch it.
-///
-/// # Note
-///
-/// After calling this function, you probably **really** want to call
-/// `issuer_get_keypair()` with the result, in order to retain the necessary
-/// data for re-instantiating this credential issuer with `issuer_new()` later.
 ///
 #[wasm_bindgen]
 pub fn issuer_create(
@@ -143,29 +137,6 @@ pub fn issuer_create(
     let system_params: SystemParameters = ok_or_return!(system_parameters.into_serde());
     let issuer: SignalIssuer = SignalIssuer::create(system_params, &mut csprng);
 
-    ok_or_return!(JsValue::from_serde(&issuer))
-}
-
-/// Get an instantiated credential issuer's aMACs keypair.
-///
-/// # Inputs
-///
-/// * `issuer` is a `SignalIssuer` as a `JsValue`.
-///
-/// # Returns
-///
-/// * An `aeonflux::amacs::Keypair` as a `JsValue`¹.
-///
-/// ¹ Which, by the way, you won't be able to do much of anything with since
-///   it's internally serialised to literal bytes, so best don't touch it.
-///
-#[wasm_bindgen]
-pub fn issuer_get_keypair(
-    issuer: JsValue,
-) -> JsValue
-{
-    let issuer: SignalIssuer = ok_or_return!(issuer.into_serde());
-    
     ok_or_return!(JsValue::from_serde(&issuer.issuer.keypair))
 }
 
