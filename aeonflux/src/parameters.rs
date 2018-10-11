@@ -22,6 +22,9 @@ use curve25519_dalek::scalar::Scalar;
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
 
+use rand_core::CryptoRng;
+use rand_core::RngCore;
+
 use errors::CredentialError;
 
 pub const NUMBER_OF_ATTRIBUTES: usize = 1;
@@ -89,6 +92,37 @@ impl SystemParameters {
 
 impl_serde_with_to_bytes_and_from_bytes!(SystemParameters,
                                          "A valid byte sequence representing a SystemParameters");
+
+impl SystemParameters {
+    /// Generate the `SystemParameters` randomly via an RNG.
+    ///
+    /// In order to never have a secret scalar in memory for generating the
+    /// orthogonal basepoint, this method can be used to obtain bytes from the
+    /// `csprng` and attempt to decompress them into a basepoint.
+    pub fn hunt_and_peck<R>(
+        csprng: &mut R,
+    ) -> SystemParameters
+    where
+        R: RngCore + CryptoRng,
+    {
+        let mut tmp: [u8; 32] = [0u8; 32];
+        let mut H: Option<RistrettoPoint> = None;
+
+        while H.is_none() {
+            csprng.fill_bytes(&mut tmp);
+
+            // Extremely unlikely but we may as well be careful.
+            if CompressedRistretto(tmp) != RISTRETTO_BASEPOINT_COMPRESSED {
+                H = CompressedRistretto(tmp).decompress();
+            }
+        }
+
+        SystemParameters {
+            g: RISTRETTO_BASEPOINT_POINT,
+            h: H.unwrap(),
+        }
+    }
+}
 
 // XXX use hyphae notation
 impl From<RistrettoPoint> for SystemParameters {
@@ -162,6 +196,8 @@ impl From<Scalar> for SystemParameters {
 mod test {
     use super::*;
 
+    use rand::thread_rng;
+
     const H: [u8; 32] = [ 184, 238, 220,  64,   5, 247,  91, 135,
                            93, 125, 218,  60,  36, 165, 166, 178,
                           118, 188,  77,  27, 133, 146, 193, 133,
@@ -191,5 +227,12 @@ mod test {
         let system_parameters = SystemParameters::from_bytes(&bytes);
 
         assert!(system_parameters.is_err());
+    }
+
+    #[test]
+    fn hunt_and_peck() {
+        let mut rng = thread_rng();
+
+        SystemParameters::hunt_and_peck(&mut rng);
     }
 }
