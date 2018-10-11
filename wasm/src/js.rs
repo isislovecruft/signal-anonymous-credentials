@@ -87,10 +87,7 @@ macro_rules! csprng_from_seed {
 ///
 /// # Inputs
 ///
-/// * `H` an array of 32 bytes, which should represent a valid
-///  `curve25519_dalek::ristretto::RistrettoPoint` chosen orthogonally to the
-///  `curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT`, a.k.a `G`,
-///  s.t. `log_G(H)` is intractible.
+/// * `seed` an array of 32 bytes, which will be used to seed an RNG.
 ///
 /// # Returns
 ///
@@ -101,16 +98,14 @@ macro_rules! csprng_from_seed {
 ///
 #[wasm_bindgen]
 pub fn system_parameters_create(
-    H: &[u8],
+    seed: &[u8],
 ) -> JsValue
 {
     if H.len() != 32 {
         return JsValue::from(0);
     }
-    let mut array: [u8; 32] = [0u8; 32];
-    array.copy_from_slice(&H[00..32]);
-
-    let system_parameters: SystemParameters = array.into();
+    let mut csprng: SignalRng = csprng_from_seed!(seed);
+    let system_parameters: SystemParameters = SystemParameters::hunt_and_peck(&mut csprng);
 
     ok_or_return!(JsValue::from_serde(&system_parameters))
 }
