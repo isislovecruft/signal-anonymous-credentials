@@ -20,7 +20,6 @@ use aeonflux::credential::CredentialBlindRequest;
 use aeonflux::credential::CredentialBlindIssuance;
 use aeonflux::credential::CredentialIssuance;
 use aeonflux::credential::CredentialPresentation;
-use aeonflux::credential::CredentialRequest;
 use aeonflux::errors::CredentialError;
 use aeonflux::proofs::committed_values_equal;
 
@@ -28,8 +27,6 @@ use bincode::{deserialize, serialize};
 
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
-
-use proofs::revealed_attributes;
 
 use roster::SIZEOF_ROSTER_ENTRY;
 use roster::RosterEntry;
@@ -74,57 +71,6 @@ pub struct SignalCredentialBlindRequest {
 pub struct SignalCredentialBlindIssuance {
     pub issuance: CredentialBlindIssuance,
 }
-
-#[derive(Debug, Eq, PartialEq)]
-#[repr(C)]
-pub struct SignalCredentialRequest {
-    pub roster_entry: RosterEntry,
-    pub request: CredentialRequest,
-    pub proof: revealed_attributes::Proof,
-}
-
-impl SignalCredentialRequest {
-    pub fn from_bytes(bytes: &[u8]) -> Result<SignalCredentialRequest, CredentialError> {
-        const RE: usize = SIZEOF_ROSTER_ENTRY;
-
-        let roster_entry = RosterEntry::from_bytes(&bytes[00..RE])?;
-        let request = CredentialRequest::from_bytes(&bytes[RE..RE + NUMBER_OF_ATTRIBUTES * 32])?;
-
-        let proof: revealed_attributes::Proof = match deserialize(&bytes[RE + NUMBER_OF_ATTRIBUTES * 32..]) {
-            Ok(x)   => x,
-            Err(_x) => {
-                #[cfg(feature = "std")]
-                println!("Error while deserializing SignalCredentialRequest: {}", _x);
-                return Err(CredentialError::MissingData);
-            },
-        };
-
-        Ok(SignalCredentialRequest { roster_entry, request, proof })
-    }
-
-    pub fn to_bytes(&self) -> Vec<u8> {
-        // XXX What is the sizeof the proof?
-        let mut v: Vec<u8> = Vec::with_capacity(SIZEOF_ROSTER_ENTRY + NUMBER_OF_ATTRIBUTES * 32);
-
-        v.extend(self.roster_entry.to_bytes());
-        v.extend(self.request.to_bytes());
-
-        let serialized = match serialize(&self.proof) {
-            Ok(x)   => x,
-            Err(_x) => {
-                #[cfg(feature = "std")]
-                println!("Error while serializing SignalCredentialRequest: {}", _x);
-                panic!();  // XXX clean this up
-            },
-        };
-
-        v.extend(serialized);
-        v
-    }
-}
-
-impl_serde_with_to_bytes_and_from_bytes!(SignalCredentialRequest,
-                                         "A valid byte sequence representing a SignalCredentialRequest");
 
 pub type SignalCredentialIssuance = CredentialIssuance;
 
