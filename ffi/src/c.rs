@@ -55,7 +55,6 @@ use signal_credential::user::SignalUser;
 
 pub type SignalRng = ChaChaRng;
 
-pub const LENGTH_H: usize = 32;
 pub const LENGTH_SEED: usize = 32;
 pub const LENGTH_SYSTEM_PARAMETERS: u64 = 64;
 pub const LENGTH_ISSUER: u64 = 160;
@@ -75,11 +74,11 @@ pub struct buf_t {
 
 #[no_mangle]
 pub extern "C" fn system_parameters_create(
-    H: *const uint8_t,  // should be 32 bytes exactly
+    seed: *const uint8_t,  // should be 32 bytes exactly
 ) -> buf_t
 {
-    let H_array: [u8; LENGTH_H] = ok_or_return!(uint8_to_array!(H, LENGTH_H));
-    let system_parameters: SystemParameters = SystemParameters::from(H_array);
+    let mut csprng: SignalRng = csprng_from_seed!(seed);
+    let system_parameters: SystemParameters = SystemParameters::hunt_and_peck(&mut csprng);
     let serialized: Vec<u8> = serialize_or_return!(&system_parameters);
 
     slice_to_len_and_ptr!(&serialized[..])
