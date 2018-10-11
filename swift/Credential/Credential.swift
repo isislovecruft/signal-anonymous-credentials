@@ -13,6 +13,12 @@ import Foundation
 class SystemParameters {
     var data = [UInt8](repeating: 0, count: Int(LENGTH_SYSTEM_PARAMETERS))
     
+    init?(withBytes bytes: [UInt8]) {
+        guard bytes.count == LENGTH_SYSTEM_PARAMETERS else { return }
+
+        self.data = bytes
+    }
+
     func create(seed: [UInt8]) -> Self? {
         guard seed.count == 32 else { return nil }
         
