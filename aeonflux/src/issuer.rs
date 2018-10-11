@@ -33,6 +33,7 @@ use credential::CredentialRequest;
 use credential::CredentialPresentation;
 use credential::VerifiedCredential;
 use errors::CredentialError;
+use nonces::Ephemeral;
 use parameters::SystemParameters;
 use pedersen::{self};
 use proofs::issuance_revealed;
@@ -158,7 +159,7 @@ impl Issuer {
             .or(Err(CredentialError::MacCreation))?;
 
         // Choose a blinding factor, x~0
-        let x0_tilde: Scalar = Scalar::random(&mut csprng);
+        let x0_tilde: Ephemeral = Ephemeral::new(&mut csprng);
 
         // Construct a commitment to the issuer secret key
         let Cx0 = pedersen::Commitment::to(&(&self.system_parameters.g * &self.keypair.secret.x0),
@@ -169,7 +170,7 @@ impl Issuer {
         let secrets = issuance_revealed::Secrets {
             x0: &self.keypair.secret.x0,
             x1: &x1,
-            x0_tilde: &x0_tilde,
+            x0_tilde: (&x0_tilde).into(),
             m1x1: &(&attributes[0] * &x1),
         };
         let publics = issuance_revealed::Publics {

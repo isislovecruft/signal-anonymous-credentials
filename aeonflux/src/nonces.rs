@@ -8,10 +8,10 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
 #[cfg(not(feature = "std"))]
-use core::ops::{Mul, Index};
+use core::ops::{Neg, Mul, Index};
 
 #[cfg(feature = "std")]
-use std::ops::{Mul, Index};
+use std::ops::{Neg, Mul, Index};
 
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 use alloc::vec::Vec;
@@ -29,14 +29,8 @@ use rand_core::RngCore;
 
 
 /// An ephemeral key or nonce, used in elGamal encryptions and then discarded.
-///
-/// # Note
-///
-/// The encapsulated `Scalar` is `pub` so that we can access it (by borrow) for
-/// zero-knowledge proof creations, without copying or changing its type
-/// (otherwise the `clear()` on `Drop` would never run).
 #[derive(Clone, Debug, Default)]
-pub struct Ephemeral(pub Scalar);
+pub struct Ephemeral(Scalar);
 
 impl From<Scalar> for Ephemeral {
     fn from(source: Scalar) -> Ephemeral {
@@ -77,6 +71,14 @@ impl<'a, 'b> Mul<&'b RistrettoBasepointTable> for &'a Ephemeral {
 }
 
 impl<'a, 'b> Mul<&'a Ephemeral> for &'b RistrettoBasepointTable {
+    type Output = RistrettoPoint;
+
+    fn mul(self, other: &'a Ephemeral) -> RistrettoPoint {
+        self * &other.0
+    }
+}
+
+impl<'a, 'b> Mul<&'a Ephemeral> for &'b RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn mul(self, other: &'a Ephemeral) -> RistrettoPoint {
@@ -137,6 +139,14 @@ impl Mul<Ephemeral> for RistrettoPoint {
 
     fn mul(self, other: Ephemeral) -> RistrettoPoint {
         self * &other.0
+    }
+}
+
+impl Neg for Ephemeral {
+    type Output = Ephemeral;
+
+    fn neg(self) -> Ephemeral {
+        Ephemeral(-self.0)
     }
 }
 

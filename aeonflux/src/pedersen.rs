@@ -27,6 +27,8 @@ use serde::de::Visitor;
 
 use errors::CredentialError;
 
+use nonces::Ephemeral;
+
 pub const SIZEOF_COMMITMENT: usize = 32;
 
 /// A Pedersen commitment.
@@ -89,15 +91,20 @@ impl Commitment {
     /// # Returns
     ///
     /// A `Commitment`.
-    pub fn to(value: &RistrettoPoint, nonce: &Scalar, basepoint: &RistrettoPoint) -> Commitment {
+    pub fn to(value: &RistrettoPoint, nonce: &Ephemeral, basepoint: &RistrettoPoint) -> Commitment {
         Commitment(value + &(nonce * basepoint))
     }
 
-    pub fn open(&self, value: &RistrettoPoint, nonce: &Scalar, basepoint: &RistrettoPoint) -> Result<(), ()> {
-        if *value == &self.0 - &(nonce * basepoint) {
-            Ok(())
-        } else {
-            Err(())
+    pub fn open(
+        &self,
+        value: &RistrettoPoint,
+        nonce: &Ephemeral,
+        basepoint: &RistrettoPoint,
+    ) -> Result<(), ()>
+    {
+        match *value == &self.0 - &(nonce * basepoint) {
+            true  => Ok(()),
+            false => Err(()),
         }
     }
 }
@@ -120,7 +127,7 @@ mod test {
     #[test]
     fn good_commitment() {
         let mut csprng = thread_rng();
-        let nonce: Scalar = Scalar::random(&mut csprng);
+        let nonce: Ephemeral = Ephemeral::new(&mut csprng);
         let value: RistrettoPoint = &Scalar::random(&mut csprng) * &RISTRETTO_BASEPOINT_TABLE;
         let basepoint: RistrettoPoint = H.decompress().unwrap();
 
@@ -132,7 +139,7 @@ mod test {
     #[test]
     fn bad_commitment() {
         let mut csprng = thread_rng();
-        let nonce: Scalar = Scalar::random(&mut csprng);
+        let nonce: Ephemeral = Ephemeral::new(&mut csprng);
         let value: RistrettoPoint = &Scalar::random(&mut csprng) * &RISTRETTO_BASEPOINT_TABLE;
         let other_value: RistrettoPoint = &Scalar::random(&mut csprng) * &RISTRETTO_BASEPOINT_TABLE;
         let basepoint: RistrettoPoint = H.decompress().unwrap();

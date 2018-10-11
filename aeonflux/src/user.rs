@@ -16,7 +16,6 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 use curve25519_dalek::ristretto::RistrettoPoint;
-use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
 
 use merlin::Transcript;
@@ -36,6 +35,7 @@ use credential::RevealedAttribute;
 use elgamal;
 use errors::CredentialError;
 use issuer::IssuerParameters;
+use nonces::Ephemeral;
 use nonces::Nonces;
 use parameters::SystemParameters;
 use pedersen;
@@ -202,14 +202,14 @@ impl User {
         let Q = rerandomized_mac.mac;
 
         // Commit to the rerandomised aMAC.
-        let zQ: Scalar = Scalar::random(&mut csprng);
+        let zQ: Ephemeral = Ephemeral::new(&mut csprng);
         let CQ: pedersen::Commitment = pedersen::Commitment::to(&Q, &zQ, &A);
 
         // Commit to the hidden attributes.
         let mut commitments: Vec<pedersen::Commitment> = Vec::with_capacity(N_ATTRIBUTES);
 
         for (zi, mi) in nonces.iter().zip(credential.attributes.iter()) {
-            let Cmi: pedersen::Commitment = pedersen::Commitment::to(&(mi * P), zi.into(), &A);
+            let Cmi: pedersen::Commitment = pedersen::Commitment::to(&(mi * P), zi, &A);
 
             commitments.push(Cmi);
         }
@@ -222,10 +222,12 @@ impl User {
         }
         V -= &zQ * &A;
 
+        let minus_zQ = -zQ;
+
         let valid_credential_secrets = valid_credential::Secrets {
             m0: &credential.attributes[0],
             z0: (&nonces[0]).into(),
-            minus_zQ: &-zQ,
+            minus_zQ: (&minus_zQ).into(),
         };
         let valid_credential_publics = valid_credential::Publics {
             B: &B,

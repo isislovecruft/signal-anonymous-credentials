@@ -123,8 +123,8 @@ impl PublicKey {
         -> Encryption
     {
         // The mapping to the point representing the message must be invertible
-        let commitment: RistrettoPoint = &RISTRETTO_BASEPOINT_TABLE * &nonce.0;
-        let encryption: RistrettoPoint = &message.0 + (&self.0 * &nonce.0);
+        let commitment: RistrettoPoint = &RISTRETTO_BASEPOINT_TABLE * nonce;
+        let encryption: RistrettoPoint = &message.0 + (&self.0 * nonce);
 
         Encryption{ commitment, encryption }
     }
@@ -242,7 +242,7 @@ mod test {
     #[test]
     fn roundtrip() {
         let mut csprng = thread_rng();
-        let nonce = Ephemeral(Scalar::random(&mut csprng));
+        let nonce = Ephemeral::new(&mut csprng);
         let msg = Message(&RISTRETTO_BASEPOINT_TABLE * &nonce);
         let keypair = Keypair::generate(&mut csprng);
         let enc = keypair.public.encrypt(&msg, &nonce);
