@@ -63,14 +63,16 @@ impl SystemParameters {
         let g: RistrettoPoint = match CompressedRistretto(g_bytes).decompress() {
             Some(x)  => x,
             None     => {
-                // println!("Could not decode G from bytes: {:?}", g_bytes);
+                #[cfg(feature = "std")]
+                println!("Could not decode G from bytes: {:?}", g_bytes);
                 return Err(CredentialError::PointDecompressionError);
             },
         };
         let h: RistrettoPoint = match CompressedRistretto(h_bytes).decompress() {
             Some(x) => x,
             None    => {
-                // println!("Could not decode H from bytes: {:?}", h_bytes);
+                #[cfg(feature = "std")]
+                println!("Could not decode H from bytes: {:?}", h_bytes);
                 return Err(CredentialError::PointDecompressionError);
             },
         };
