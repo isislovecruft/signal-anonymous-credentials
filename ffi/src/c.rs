@@ -84,7 +84,7 @@ pub extern "C" fn system_parameters_create(
     slice_to_len_and_ptr!(&serialized[..])
 }
 
-// returns a serialized Issuer struct
+// returns a serialized Issuer keypair
 #[no_mangle]
 pub extern "C" fn issuer_create(
     system_parameters: *const uint8_t,
@@ -95,7 +95,7 @@ pub extern "C" fn issuer_create(
     let mut csprng: SignalRng = csprng_from_seed!(seed);
     let system_params = deserialize_or_return!(SystemParameters, system_parameters_length, system_parameters);
     let issuer: SignalIssuer = SignalIssuer::create(system_params, &mut csprng);
-    let serialized: Vec<u8> = serialize_or_return!(&issuer);
+    let serialized: Vec<u8> = serialize_or_return!(&issuer.issuer.keypair);
 
     slice_to_len_and_ptr!(&serialized[..])
 }
@@ -112,18 +112,6 @@ pub extern "C" fn issuer_new(
     let keys = deserialize_or_return!(AmacsKeypair, keypair_length, keypair);
     let issuer: SignalIssuer = SignalIssuer::new(system_params, keys);
     let serialized: Vec<u8> = serialize_or_return!(&issuer);
-
-    slice_to_len_and_ptr!(&serialized[..])
-}
-
-#[no_mangle]
-pub extern "C" fn issuer_get_keypair(
-    issuer: *const uint8_t,
-    issuer_length: uint64_t,
-) -> buf_t
-{
-    let issuer = deserialize_or_return!(SignalIssuer, issuer_length, issuer);
-    let serialized: Vec<u8> = serialize_or_return!(&issuer.issuer.keypair);
 
     slice_to_len_and_ptr!(&serialized[..])
 }

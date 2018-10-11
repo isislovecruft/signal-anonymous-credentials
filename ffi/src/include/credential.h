@@ -33,8 +33,6 @@ buf_t issuer_new(const uint8_t* system_parameters,
                  const uint64_t keypair_length);
 buf_t issuer_get_issuer_parameters(const uint8_t* issuer,
                                    const uint64_t issuer_length);
-buf_t issuer_get_keypair(const uint8_t* issuer,
-			 const uint64_t issuer_length);
 buf_t issuer_issue(const uint8_t* issuer,
                    const uint64_t issuer_length,
                    const uint8_t* seed,

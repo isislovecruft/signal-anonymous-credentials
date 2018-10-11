@@ -12,14 +12,8 @@ class-oriented, but it still should be hopefully clear which function is which).
 For all APIs¹, the current steps to create a new issuer are:
 
     system_parameters_create(bytes) -> system_parameters
-    issuer_create(system_parameters, seed) -> issuer
-    issuer_get_keypair() -> amacs_keypair
-
-To initialise an issuer from its keypair, call:
-
+    issuer_create(system_parameters, seed) -> amacs_keypair
     issuer_new(system_parameters, amacs_keypair)
-
-[Note: this is likely going to be simplified to remove `issuer_get_keypair()`.]
 
 Next, the current steps to go through the entire protocol on the issuer side are:
 
