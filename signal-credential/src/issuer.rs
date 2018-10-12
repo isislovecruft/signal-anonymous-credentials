@@ -34,7 +34,6 @@ use credential::NUMBER_OF_ATTRIBUTES;
 use credential::SignalCredentialIssuance;
 use credential::SignalCredentialPresentation;
 use credential::VerifiedSignalCredential;
-use errors::RosterError;
 use phone_number::CommittedPhoneNumber;
 use phone_number::PhoneNumber;
 
@@ -163,7 +162,7 @@ impl SignalIssuer {
     pub fn verify_roster_membership(
         &self,
         credential: &VerifiedSignalCredential,
-    ) -> Result<CommittedPhoneNumber, RosterError>
+    ) -> Result<CommittedPhoneNumber, CredentialError>
     {
         let publics = committed_values_equal::Publics {
             B: &self.issuer.system_parameters.g,
@@ -177,7 +176,7 @@ impl SignalIssuer {
         if credential.0.roster_membership_proof.verify(&mut transcript, publics).is_ok() {
             Ok(credential.0.roster_entry_commitment)
         } else {
-            Err(RosterError::InvalidProof)
+            Err(CredentialError::VerificationFailure)
         }
     }
 }
