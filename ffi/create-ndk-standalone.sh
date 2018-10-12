@@ -9,7 +9,7 @@ if [ -d NDK ]; then
 fi
 
 if [ ! -d "${ANDROID_SDK_ROOT-}" ]; then
-    ANDROID_SDK_ROOT=/usr/local/share/android-sdk
+    ANDROID_SDK_ROOT="$HOME/Android/Sdk"
 fi
 if [ ! -d "${ANDROID_HOME-}" ]; then
     ANDROID_HOME="$ANDROID_SDK_ROOT"
