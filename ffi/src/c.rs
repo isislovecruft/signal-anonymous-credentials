@@ -491,26 +491,6 @@ mod test {
 
     #[allow(unused_variables)]
     #[test]
-    fn test_issuer_get_keypair() {
-        let system_parameters = system_parameters_create(H.as_ptr());
-        let issuer = issuer_create(system_parameters.ptr,
-                                   system_parameters.len,
-                                   SEED.as_ptr());
-        let issuer_keypair = issuer_get_keypair(issuer.ptr, issuer.len);
-
-        assert!(issuer_keypair.len != 0);
-        assert!(issuer_keypair.len == LENGTH_ISSUER_KEYPAIR,
-                "issuer parameters length was {}", issuer_keypair.len);
-
-        let deserialized: AmacsKeypair = assert_deserialized!(AmacsKeypair,
-                                                              issuer_keypair.len,
-                                                              issuer_keypair.ptr);
-
-        assert!(deserialized.public.Xn.get(0).is_some());
-    }
-
-    #[allow(unused_variables)]
-    #[test]
     fn test_user_new() {
         let issuer = issuer_create(SYSTEM_PARAMETERS.as_ptr(),
                                    SYSTEM_PARAMETERS.len() as uint64_t,
