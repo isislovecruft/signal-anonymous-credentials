@@ -16,8 +16,6 @@ use std::vec::Vec;
 
 use aeonflux::credential::SIZEOF_CREDENTIAL_PRESENTATION;
 use aeonflux::credential::Credential;
-use aeonflux::credential::CredentialBlindRequest;
-use aeonflux::credential::CredentialBlindIssuance;
 use aeonflux::credential::CredentialIssuance;
 use aeonflux::credential::CredentialPresentation;
 use aeonflux::errors::CredentialError;
