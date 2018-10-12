@@ -147,6 +147,7 @@ mod test {
     use issuer::SignalIssuer;
     use issuer::IssuerParameters;
     use parameters::SystemParameters;
+    use phone_number::RosterEntryCommitment;
     use user::SignalUser;
 
     use rand::thread_rng;
@@ -169,10 +170,8 @@ mod test {
 
         alice.obtain_finish(Some(&alice_issuance)).unwrap();
 
-        let (commitment, opening) = alice.create_roster_entry_commitment(&mut alice_rng);
-        let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng,
-                                                                          &commitment,
-                                                                          &opening).unwrap();
+        let entry = RosterEntryCommitment::create(&alice_phone_number_input, &system_parameters, &mut alice_rng).unwrap();
+        let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng, &entry).unwrap();
         let verified: VerifiedSignalCredential = issuer.verify(alice_presentation).unwrap();
 
         let serialized = verified.to_bytes();

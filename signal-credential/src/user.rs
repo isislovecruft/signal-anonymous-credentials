@@ -15,7 +15,6 @@ use std::vec::Vec;
 use aeonflux::elgamal::{self};
 use aeonflux::errors::CredentialError;
 use aeonflux::issuer::IssuerParameters;
-use aeonflux::nonces::Ephemeral;
 use aeonflux::nonces::Nonces;
 use aeonflux::parameters::NUMBER_OF_ATTRIBUTES;
 use aeonflux::parameters::SystemParameters;
@@ -33,13 +32,13 @@ use rand_core::CryptoRng;
 use credential::SignalCredentialIssuance;
 use credential::SignalCredentialPresentation;
 use credential::SignalCredential;
-use phone_number::CommittedPhoneNumber;
 use phone_number::PhoneNumber;
+use phone_number::RosterEntryCommitment;
 
 /// DOCDOC
 #[derive(Debug, Eq, PartialEq)]
 pub struct SignalUser {
-    phone_number: PhoneNumber,
+    pub phone_number: PhoneNumber,
     pub user: User,
 }
 
@@ -85,22 +84,6 @@ impl SignalUser {
     }
 
     /// DOCDOC
-    pub fn create_roster_entry_commitment<R>(
-        &self,
-        csprng: &mut R,
-    ) -> (CommittedPhoneNumber, Ephemeral)
-    where
-        R: RngCore + CryptoRng,
-    {
-        let opening = Ephemeral::new(csprng);
-        let commitment = CommittedPhoneNumber::from_phone_number(&self.phone_number,
-                                                                 &opening,
-                                                                 &self.user.system_parameters.g,
-                                                                 &self.user.system_parameters.h);
-        (commitment, opening)
-    }
-
-    /// DOCDOC
     pub fn obtain_finish(
         &mut self,
         issuance: Option<&SignalCredentialIssuance>,
@@ -116,8 +99,7 @@ impl SignalUser {
     pub fn show<R>(
         &self,
         rng: &mut R,
-        roster_entry_commitment: &CommittedPhoneNumber,
-        roster_entry_commitment_opening: &Ephemeral,
+        roster_entry_commitment: &RosterEntryCommitment,
     ) -> Result<SignalCredentialPresentation, CredentialError>
     where
         R: RngCore + CryptoRng,
@@ -137,14 +119,14 @@ impl SignalUser {
         let roster_membership_secrets = committed_values_equal::Secrets {
             m0: &credential.attributes[0],
             z0: (&nonces[0]).into(),
-            z1: roster_entry_commitment_opening.into(),
+            z1: (&roster_entry_commitment.opening).into(),
         };
         let roster_membership_publics = committed_values_equal::Publics {
             B: &self.user.system_parameters.g,
             A: &self.user.system_parameters.h,
             P: &presentation.rerandomized_nonce.clone(),
             Cm0: &presentation.attributes_blinded[0].into(),
-            Cm1: &roster_entry_commitment.0.into(),
+            Cm1: &roster_entry_commitment.commitment.0.into(),
         };
         let roster_membership_proof = committed_values_equal::Proof::create(&mut roster_membership_transcript,
                                                                             roster_membership_publics,
@@ -152,7 +134,7 @@ impl SignalUser {
 
         Ok(SignalCredentialPresentation {
             presentation: presentation,
-            roster_entry_commitment: roster_entry_commitment.clone(),
+            roster_entry_commitment: roster_entry_commitment.commitment.clone(),
             roster_membership_proof: roster_membership_proof,
         })
     }

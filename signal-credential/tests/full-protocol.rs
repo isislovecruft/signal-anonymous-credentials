@@ -17,6 +17,7 @@ use rand::thread_rng;
 use signal_credential::credential::*;
 use signal_credential::issuer::*;
 use signal_credential::phone_number::CommittedPhoneNumber;
+use signal_credential::phone_number::RosterEntryCommitment;
 use signal_credential::user::SignalUser;
 
 #[test]
@@ -59,26 +60,26 @@ fn credential_issuance_and_presentation() {
 
     bob.obtain_finish(Some(&bob_issuance)).unwrap();
 
-    let (bob_roster_entry_commitment,
-         _bob_roster_entry_commitment_opening) = bob.create_roster_entry_commitment(&mut bob_rng);
+    let bob_entry: RosterEntryCommitment = RosterEntryCommitment::create(&bob_phone_number_input,
+                                                                         &system_parameters,
+                                                                         &mut bob_rng).unwrap();
 
     // Pretend that Bob had previously made a Signal group with a key:
     let mut roster_admins: Vec<CommittedPhoneNumber> = Vec::new();
     let mut roster_users: Vec<CommittedPhoneNumber> = Vec::new();
 
-    roster_admins.push(bob_roster_entry_commitment);
+    roster_admins.push(bob_entry.commitment);
 
-    let (alice_roster_entry_commitment,
-         alice_roster_entry_commitment_opening) = alice.create_roster_entry_commitment(&mut alice_rng);
+    let alice_entry: RosterEntryCommitment = RosterEntryCommitment::create(&alice_phone_number_input,
+                                                                           &system_parameters,
+                                                                           &mut alice_rng).unwrap();
 
     // Now Bob adds Alice:
-    roster_users.push(alice_roster_entry_commitment);
+    roster_users.push(alice_entry.commitment);
 
     // Alice wants to prove they're in the roster:
     let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng,
-                                                                      &alice_roster_entry_commitment,
-                                                                      &alice_roster_entry_commitment_opening).unwrap();
-
+                                                                      &alice_entry).unwrap();
     let verified_credential: VerifiedSignalCredential = issuer.verify(alice_presentation).unwrap();
 
     let user_proof = issuer.verify_roster_membership(&verified_credential);

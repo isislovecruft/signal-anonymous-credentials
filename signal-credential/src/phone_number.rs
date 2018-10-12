@@ -25,6 +25,7 @@ use aeonflux::amacs::{self};
 use aeonflux::credential::EncryptedAttribute;
 use aeonflux::elgamal::{self};
 use aeonflux::nonces::Ephemeral;
+use aeonflux::parameters::SystemParameters;
 use aeonflux::pedersen::{self};
 
 use curve25519_dalek::ristretto::RistrettoPoint;
@@ -32,6 +33,9 @@ use curve25519_dalek::scalar::Scalar;
 
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
+
+use rand_core::RngCore;
+use rand_core::CryptoRng;
 
 use errors::PhoneNumberError;
 
@@ -308,6 +312,71 @@ impl CommittedPhoneNumber {
         self.0.open(&(&phone_number.0 * h), nonce, &g)?;
 
         Ok(())
+    }
+}
+
+/// DOCDOC
+pub struct RosterEntryCommitment {
+    pub commitment: CommittedPhoneNumber,
+    pub opening: Ephemeral,
+}
+
+impl RosterEntryCommitment {
+    pub fn from_bytes(bytes: &[u8]) -> Result<RosterEntryCommitment, PhoneNumberError> {
+        let commitment = CommittedPhoneNumber::from_bytes(&bytes[..SIZEOF_COMMITTED_PHONE_NUMBER])?;
+
+        let mut tmp = [0u8; 32];
+
+        tmp.copy_from_slice(&bytes[SIZEOF_COMMITTED_PHONE_NUMBER..]);
+
+        let opening: Ephemeral = Scalar::from_bits(tmp).into();
+
+        Ok(RosterEntryCommitment { commitment, opening })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Vec::with_capacity(SIZEOF_COMMITTED_PHONE_NUMBER + 32);
+
+        v.extend(self.commitment.to_bytes().iter());
+        v.extend(self.opening.to_bytes().iter());
+
+        v
+    }
+}
+
+impl_serde_with_to_bytes_and_from_bytes!(RosterEntryCommitment,
+                                         "A valid byte sequence representing a RosterEntryCommitment");
+
+impl RosterEntryCommitment {
+    pub fn create<R>(
+        phone_number: &[u8],
+        system_parameters: &SystemParameters,
+        csprng: &mut R,
+    ) -> Result<RosterEntryCommitment, PhoneNumberError>
+    where
+        R: RngCore + CryptoRng,
+    {
+        let opening = Ephemeral::new(csprng);
+        let number = PhoneNumber::try_from_bytes(&phone_number)?;
+        let commitment = CommittedPhoneNumber::from_phone_number(&number,
+                                                                 &opening,
+                                                                 &system_parameters.g,
+                                                                 &system_parameters.h);
+        Ok(RosterEntryCommitment{ commitment, opening })
+    }
+
+    pub fn open(
+        &self,
+        phone_number: &[u8],
+        system_parameters: &SystemParameters,
+    ) -> Result<(), PhoneNumberError>
+    {
+        let number = PhoneNumber::try_from_bytes(&phone_number)?;
+
+        match self.commitment.open(&number, &self.opening, &system_parameters.g, &system_parameters.h) {
+            Ok(x)  => Ok(x),
+            Err(_) => Err(PhoneNumberError::InvalidPhoneNumber)
+        }
     }
 }
 
