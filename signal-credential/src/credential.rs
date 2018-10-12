@@ -31,8 +31,6 @@ use serde::de::Visitor;
 use phone_number::SIZEOF_COMMITTED_PHONE_NUMBER;
 use phone_number::CommittedPhoneNumber;
 
-use roster::RosterEntry;
-
 /// The number of revealed attributes on a `SignalCredential` during issuance.
 pub const ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES: usize = 1;
 
@@ -50,30 +48,6 @@ pub const NUMBER_OF_ATTRIBUTES: usize =
     ISSUANCE_NUMBER_OF_REVEALED_ATTRIBUTES +
     ISSUANCE_NUMBER_OF_BLINDED_ATTRIBUTES;
 
-/// A request from a `SignalUser` for a `SignalCredential`, optionally
-/// containing revealed and encrypted attributes.  If there are encrypted
-/// attributes, they must be accompanied by a proof that they are correctly
-/// formed with respect to the `SignalUser`'s `public_key, an elGamal encryption
-/// public key.
-#[derive(Debug, Eq, PartialEq)]
-pub struct SignalCredentialBlindRequest {
-    /// If the `request` has `encrypted_attributes` it must also contain a
-    /// zero-knowledge proof showing that:
-    ///
-    /// 1. the `encrypted_attributes` were created with the user's public key,
-    /// 2. the user knows the corresponding secret key, and
-    /// 3. the commitment in the user's `roster_entry` opens to the same plaintext
-    ///    attribute as in the encryption.
-    ///
-    /// The `blind_attributes_proof` is required if there are `encrypted_attributes`.
-    pub request: CredentialBlindRequest,
-    pub roster_entry: RosterEntry,
-}
-
-pub struct SignalCredentialBlindIssuance {
-    pub issuance: CredentialBlindIssuance,
-}
-
 pub type SignalCredentialIssuance = CredentialIssuance;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -85,7 +59,7 @@ pub struct SignalCredentialPresentation {
     /// Create a zero-knowledge proof showing that if the aMAC on our
     /// credential verifies successfully, that the underlying value in the
     /// commitment to our credential attribute is the same as the underlying
-    /// committed value in a `GroupMembershipRoster`.
+    /// committed value the `roster_entry_commitment`.
     pub roster_membership_proof: committed_values_equal::Proof,
 }
 

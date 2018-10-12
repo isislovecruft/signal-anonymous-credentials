@@ -38,14 +38,12 @@ pub mod credential;
 pub mod errors;
 pub mod issuer;
 pub mod phone_number;
-pub mod roster;
 pub mod user;
 
 pub use credential::*;
 pub use errors::*;
 pub use issuer::*;
 pub use phone_number::*;
-pub use roster::*;
 pub use user::*;
 
 // Re-export common externally-used types from aeonflux.
