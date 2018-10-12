@@ -24,6 +24,7 @@ use core::ops::{Index};
 use aeonflux::amacs::{self};
 use aeonflux::credential::EncryptedAttribute;
 use aeonflux::elgamal::{self};
+use aeonflux::nonces::Ephemeral;
 use aeonflux::pedersen::{self};
 
 use curve25519_dalek::ristretto::RistrettoPoint;
@@ -286,7 +287,7 @@ impl_serde_with_to_bytes_and_from_bytes!(CommittedPhoneNumber,
 impl CommittedPhoneNumber {
     pub fn from_phone_number(
         phone_number: &PhoneNumber,
-        nonce: &Scalar,
+        nonce: &Ephemeral,
         g: &RistrettoPoint,
         h: &RistrettoPoint,
     ) -> CommittedPhoneNumber
@@ -299,7 +300,7 @@ impl CommittedPhoneNumber {
     pub fn open(
         &self,
         phone_number: &PhoneNumber,
-        nonce: &Scalar,
+        nonce: &Ephemeral,
         g: &RistrettoPoint,
         h: &RistrettoPoint,
     ) -> Result<(), ()>

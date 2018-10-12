@@ -22,8 +22,6 @@ use aeonflux::parameters::SystemParameters;
 use aeonflux::user::User;
 use aeonflux::proofs::committed_values_equal;
 
-use curve25519_dalek::scalar::Scalar;
-
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
 
@@ -37,41 +35,25 @@ use credential::SignalCredentialPresentation;
 use credential::SignalCredential;
 use phone_number::CommittedPhoneNumber;
 use phone_number::PhoneNumber;
-use roster::SIZEOF_ROSTER_ENTRY;
-use roster::GroupRosterKey;
-use roster::RosterEntry;
 
 /// DOCDOC
 #[derive(Debug, Eq, PartialEq)]
 pub struct SignalUser {
-    pub roster_entry: RosterEntry,
-    roster_entry_opening: Scalar,
     phone_number: PhoneNumber,
     pub user: User,
 }
 
 impl SignalUser {
     pub fn from_bytes(bytes: &[u8]) -> Result<SignalUser, CredentialError> {
-        const RE: usize = SIZEOF_ROSTER_ENTRY;
+        let phone_number = PhoneNumber::from_bytes(&bytes[00..32])?;
+        let user = User::from_bytes(&bytes[32..])?;
 
-        let roster_entry = RosterEntry::from_bytes(&bytes[00..RE])?;
-
-        let mut tmp: [u8; 32] = [0u8; 32];
-
-        tmp.copy_from_slice(&bytes[RE..RE+32]);
-
-        let roster_entry_opening = Scalar::from_canonical_bytes(tmp)?;
-        let phone_number = PhoneNumber::from_bytes(&bytes[RE+32..RE+64])?;
-        let user = User::from_bytes(&bytes[RE+64..])?;
-
-        Ok(SignalUser { roster_entry, roster_entry_opening, phone_number, user })
+        Ok(SignalUser { phone_number, user })
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut v: Vec<u8> = Vec::new();
 
-        v.extend(self.roster_entry.to_bytes());
-        v.extend(self.roster_entry_opening.to_bytes().iter());
         v.extend(self.phone_number.to_bytes());
         v.extend(self.user.to_bytes());
 
@@ -84,47 +66,43 @@ impl_serde_with_to_bytes_and_from_bytes!(SignalUser,
 
 impl SignalUser {
     /// DOCDOC
-    pub fn new<R>(
+    pub fn new(
         system_parameters: SystemParameters,
         issuer_parameters: IssuerParameters,
         key: Option<elgamal::Keypair>,
         phone_number: &[u8],
-        csprng: &mut R,
     ) -> Result<SignalUser, CredentialError>
-    where
-        R: RngCore + CryptoRng,
     {
         let user = User::new(system_parameters, issuer_parameters, key);
 
         // Map our phone number to a scalar mod ell.
         let number: PhoneNumber = PhoneNumber::try_from_bytes(&phone_number)?;
 
-        let transcript = Transcript::new(b"SIGNAL USER NEW");
-        let mut csprng = transcript.fork_transcript().reseed_from_rng(csprng);
-
-        // Create our roster entry.
-        let opening = Scalar::random(&mut csprng);
-        let commitment = CommittedPhoneNumber::from_phone_number(&number,
-                                                                 &opening,
-                                                                 &system_parameters.g,
-                                                                 &system_parameters.h);
-        // XXX Do actual encryption with a real key here
-        let roster_key = GroupRosterKey([0u8; 32]);
-        let roster_entry = RosterEntry::new(&commitment, &number, &opening, &roster_key);
-
         Ok(SignalUser {
             user: user,
             phone_number: number,
-            roster_entry: roster_entry,
-            roster_entry_opening: opening,
         })
+    }
+
+    /// DOCDOC
+    pub fn create_roster_entry_commitment<R>(
+        &self,
+        csprng: &mut R,
+    ) -> (CommittedPhoneNumber, Ephemeral)
+    where
+        R: RngCore + CryptoRng,
+    {
+        let opening = Ephemeral::new(csprng);
+        let commitment = CommittedPhoneNumber::from_phone_number(&self.phone_number,
+                                                                 &opening,
+                                                                 &self.user.system_parameters.g,
+                                                                 &self.user.system_parameters.h);
+        (commitment, opening)
     }
 
     /// DOCDOC
     pub fn obtain_finish(
         &mut self,
-        // XXX the Option is probably unnecessary, we never call this with None
-        //     because the FFI bails before that.
         issuance: Option<&SignalCredentialIssuance>,
     ) -> Result<(), CredentialError>
     {
@@ -158,8 +136,8 @@ impl SignalUser {
         let mut roster_membership_transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
         let roster_membership_secrets = committed_values_equal::Secrets {
             m0: &credential.attributes[0],
-            z0: &nonces[0].0,
-            z1: &roster_entry_commitment_opening.0,
+            z0: (&nonces[0]).into(),
+            z1: roster_entry_commitment_opening.into(),
         };
         let roster_membership_publics = committed_values_equal::Publics {
             B: &self.user.system_parameters.g,
@@ -174,7 +152,7 @@ impl SignalUser {
 
         Ok(SignalCredentialPresentation {
             presentation: presentation,
-            roster_entry: self.roster_entry.clone(),
+            roster_entry_commitment: roster_entry_commitment.clone(),
             roster_membership_proof: roster_membership_proof,
         })
     }
@@ -310,7 +288,6 @@ mod test {
     #[test]
     fn signal_user_serialize_deserialize() {
         let mut issuer_rng = thread_rng();
-        let mut alice_rng = thread_rng();
 
         let system_parameters: SystemParameters = SystemParameters::from(H);
         let issuer: SignalIssuer = SignalIssuer::create(system_parameters, &mut issuer_rng);
@@ -319,8 +296,7 @@ mod test {
         let alice: SignalUser = SignalUser::new(system_parameters,
                                                 issuer_parameters.clone(),
                                                 None, // no encrypted attributes so the key isn't needed
-                                                alice_phone_number_input.clone(),
-                                                &mut alice_rng).unwrap();
+                                                alice_phone_number_input.clone()).unwrap();
 
         let serialized = alice.to_bytes();
         let deserialized = SignalUser::from_bytes(&serialized).unwrap();

@@ -35,9 +35,8 @@ use credential::SignalCredentialIssuance;
 use credential::SignalCredentialPresentation;
 use credential::VerifiedSignalCredential;
 use errors::RosterError;
+use phone_number::CommittedPhoneNumber;
 use phone_number::PhoneNumber;
-use roster::GroupMembershipLevel;
-use roster::GroupMembershipRoster;
 
 /// An issuer and honest verifier of `SignalCredential`s.
 #[repr(C)]
@@ -156,42 +155,27 @@ impl SignalIssuer {
         Ok(VerifiedSignalCredential(signal_presentation))
     }
 
+    /// # Note
+    ///
+    /// If the proof is okay, the issuer MUST still check that the returned
+    /// `roster_entry_commitment` is actually in the desired roster at the
+    /// correct permissions level.
     pub fn verify_roster_membership(
         &self,
         credential: &VerifiedSignalCredential,
-        roster: &GroupMembershipRoster,
-        level: &GroupMembershipLevel,
-    ) -> Result<(), RosterError>
+    ) -> Result<CommittedPhoneNumber, RosterError>
     {
-        match level {
-            GroupMembershipLevel::Owner => 
-                if ! &roster.owners[..].contains(&credential.0.roster_entry) {
-                    return Err(RosterError::MemberIsNotOwner);
-                },
-            GroupMembershipLevel::Admin =>
-                if ! &roster.owners[..].contains(&credential.0.roster_entry) &&
-                ! &roster.admins[..].contains(&credential.0.roster_entry) {
-                    return Err(RosterError::MemberIsNotAdmin);
-                },
-            GroupMembershipLevel::User =>
-                if ! &roster.owners[..].contains(&credential.0.roster_entry) &&
-                ! &roster.admins[..].contains(&credential.0.roster_entry) &&
-                ! &roster.users[..].contains(&credential.0.roster_entry) {
-                    return Err(RosterError::MemberIsNotUser);
-                }
-        }
-
         let publics = committed_values_equal::Publics {
             B: &self.issuer.system_parameters.g,
             A: &self.issuer.system_parameters.h,
             P: &credential.0.presentation.rerandomized_nonce,
             Cm0: &credential.0.presentation.attributes_blinded[0].clone().into(),
-            Cm1: &credential.0.roster_entry.committed_phone_number.0.into(),
+            Cm1: &credential.0.roster_entry_commitment.0.into(),
         };
         let mut transcript = Transcript::new(b"SIGNAL GROUP MEMBERSHIP");
 
         if credential.0.roster_membership_proof.verify(&mut transcript, publics).is_ok() {
-            Ok(())
+            Ok(credential.0.roster_entry_commitment)
         } else {
             Err(RosterError::InvalidProof)
         }

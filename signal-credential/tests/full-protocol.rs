@@ -16,9 +16,7 @@ use aeonflux::parameters::SystemParameters;
 use rand::thread_rng;
 use signal_credential::credential::*;
 use signal_credential::issuer::*;
-use signal_credential::roster::GroupMembershipLevel;
-use signal_credential::roster::GroupMembershipRoster;
-use signal_credential::roster::GroupRosterKey;
+use signal_credential::phone_number::CommittedPhoneNumber;
 use signal_credential::user::SignalUser;
 
 #[test]
@@ -40,15 +38,13 @@ fn credential_issuance_and_presentation() {
     let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                 issuer_parameters.clone(),
                                                 None, // no encrypted attributes so the key isn't needed
-                                                alice_phone_number_input.clone(),
-                                                &mut alice_rng).unwrap();
+                                                alice_phone_number_input.clone()).unwrap();
 
     let bob_phone_number_input: &[u8] = &[1, 4, 1, 5, 5, 5, 5, 6, 6, 6, 6];
     let mut bob: SignalUser = SignalUser::new(system_parameters,
                                               issuer_parameters.clone(),
                                               None, // no encrypted attributes so the key isn't needed
-                                              bob_phone_number_input.clone(),
-                                              &mut bob_rng).unwrap();
+                                              bob_phone_number_input.clone()).unwrap();
 
     // Try to get the issuer to give Alice a new credential
     let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_phone_number_input,
@@ -63,24 +59,34 @@ fn credential_issuance_and_presentation() {
 
     bob.obtain_finish(Some(&bob_issuance)).unwrap();
 
+    let (bob_roster_entry_commitment,
+         _bob_roster_entry_commitment_opening) = bob.create_roster_entry_commitment(&mut bob_rng);
+
     // Pretend that Bob had previously made a Signal group with a key:
-    let group_roster_key: GroupRosterKey = GroupRosterKey([0u8; 32]);
-    let mut roster: GroupMembershipRoster = GroupMembershipRoster::new(42, bob.roster_entry,
-                                                                       group_roster_key);
+    let mut roster_admins: Vec<CommittedPhoneNumber> = Vec::new();
+    let mut roster_users: Vec<CommittedPhoneNumber> = Vec::new();
+
+    roster_admins.push(bob_roster_entry_commitment);
+
+    let (alice_roster_entry_commitment,
+         alice_roster_entry_commitment_opening) = alice.create_roster_entry_commitment(&mut alice_rng);
 
     // Now Bob adds Alice:
-    let _ = roster.add_user(alice.roster_entry); // XXX that api is bad
+    roster_users.push(alice_roster_entry_commitment);
 
     // Alice wants to prove they're in the roster:
-    let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng).unwrap();
+    let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng,
+                                                                      &alice_roster_entry_commitment,
+                                                                      &alice_roster_entry_commitment_opening).unwrap();
 
     let verified_credential: VerifiedSignalCredential = issuer.verify(alice_presentation).unwrap();
 
-    let user_proof = issuer.verify_roster_membership(&verified_credential, &roster,
-                                                     &GroupMembershipLevel::User);
+    let user_proof = issuer.verify_roster_membership(&verified_credential);
     assert!(user_proof.is_ok());
 
-    let admin_proof = issuer.verify_roster_membership(&verified_credential, &roster,
-                                                      &GroupMembershipLevel::Admin);
-    assert!(admin_proof.is_err());
+    let server_copy_alice_roster_entry_commitment = user_proof.unwrap();
+
+    // Now the issuer can check whether Alice was an admin or a user:
+    assert!(! roster_admins.contains(&server_copy_alice_roster_entry_commitment));
+    assert!(roster_users.contains(&server_copy_alice_roster_entry_commitment));
 }

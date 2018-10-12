@@ -28,7 +28,9 @@ use bincode::{deserialize, serialize};
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
 
-use roster::SIZEOF_ROSTER_ENTRY;
+use phone_number::SIZEOF_COMMITTED_PHONE_NUMBER;
+use phone_number::CommittedPhoneNumber;
+
 use roster::RosterEntry;
 
 /// The number of revealed attributes on a `SignalCredential` during issuance.
@@ -76,8 +78,8 @@ pub type SignalCredentialIssuance = CredentialIssuance;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SignalCredentialPresentation {
-    /// The user's corresponding `RosterEntry` in the `GroupMembershipRoster`.
-    pub roster_entry: RosterEntry,
+    /// The user's corresponding committed phone number in a roster entry.
+    pub roster_entry_commitment: CommittedPhoneNumber,
     /// A `CredentialPresentation` showing that this credential is valid.
     pub presentation: CredentialPresentation,
     /// Create a zero-knowledge proof showing that if the aMAC on our
@@ -89,7 +91,7 @@ pub struct SignalCredentialPresentation {
 
 impl SignalCredentialPresentation {
     pub fn from_bytes(bytes: &[u8]) -> Result<SignalCredentialPresentation, CredentialError> {
-        const RE: usize = SIZEOF_ROSTER_ENTRY;
+        const RE: usize = SIZEOF_COMMITTED_PHONE_NUMBER;
 
         if bytes.len() < RE + SIZEOF_CREDENTIAL_PRESENTATION {
             #[cfg(feature = "std")]
@@ -97,7 +99,7 @@ impl SignalCredentialPresentation {
             return Err(CredentialError::MissingData);
         }
 
-        let roster_entry = RosterEntry::from_bytes(&bytes[00..RE])?;
+        let roster_entry_commitment = CommittedPhoneNumber::from_bytes(&bytes[00..RE])?;
         let presentation = CredentialPresentation::from_bytes(&bytes[RE..RE+SIZEOF_CREDENTIAL_PRESENTATION])?;
 
         let roster_membership_proof: committed_values_equal::Proof =
@@ -111,13 +113,13 @@ impl SignalCredentialPresentation {
             },
         };
 
-        Ok(SignalCredentialPresentation { roster_entry, presentation, roster_membership_proof })
+        Ok(SignalCredentialPresentation { roster_entry_commitment, presentation, roster_membership_proof })
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut v: Vec<u8> = Vec::with_capacity(1000); // XXX
+        let mut v: Vec<u8> = Vec::with_capacity(512);
 
-        v.extend(self.roster_entry.to_bytes());
+        v.extend(self.roster_entry_commitment.to_bytes());
         v.extend(self.presentation.to_bytes());
 
         let serialized = match serialize(&self.roster_membership_proof) {
@@ -187,14 +189,16 @@ mod test {
         let mut alice: SignalUser = SignalUser::new(system_parameters,
                                                     issuer_parameters.clone(),
                                                     None, // no enncrypted attributes so the key isn't needed
-                                                    alice_phone_number_input.clone(),
-                                                    &mut alice_rng).unwrap();
+                                                    alice_phone_number_input.clone()).unwrap();
         let alice_issuance: SignalCredentialIssuance = issuer.issue(&alice_phone_number_input,
                                                                     &mut issuer_rng).unwrap();
 
         alice.obtain_finish(Some(&alice_issuance)).unwrap();
 
-        let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng).unwrap();
+        let (commitment, opening) = alice.create_roster_entry_commitment(&mut alice_rng);
+        let alice_presentation: SignalCredentialPresentation = alice.show(&mut alice_rng,
+                                                                          &commitment,
+                                                                          &opening).unwrap();
         let verified: VerifiedSignalCredential = issuer.verify(alice_presentation).unwrap();
 
         let serialized = verified.to_bytes();
