@@ -33,14 +33,11 @@ extern crate failure;
 extern crate rand;
 extern crate rand_core;
 extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 
 pub mod credential;
 pub mod errors;
 pub mod issuer;
 pub mod phone_number;
-pub mod proofs;
 pub mod roster;
 pub mod user;
 
@@ -48,7 +45,6 @@ pub use credential::*;
 pub use errors::*;
 pub use issuer::*;
 pub use phone_number::*;
-pub use proofs::*;
 pub use roster::*;
 pub use user::*;
 
