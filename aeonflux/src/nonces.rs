@@ -47,6 +47,10 @@ impl Ephemeral {
     {
         Ephemeral(Scalar::random(csprng))
     }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.0.to_bytes().to_vec()
+    }
 }
 
 impl<'s, 'e: 's> From<&'e Ephemeral> for &'s Scalar {
