@@ -16,6 +16,7 @@ const uint LENGTH_USER = 288;
 const uint LENGTH_CREDENTIAL_ISSUANCE = 328;
 const uint LENGTH_CREDENTIAL_PRESENTATION = 448;
 const uint LENGTH_VERIFIED_CREDENTIAL = 448;
+const uint LENGTH_ROSTER_ENTRY_COMMITMENT = 64;
 
 // RUST_C_COUPLED: ffi/src/c.rs buf_t
 typedef struct buf_s {
