@@ -57,10 +57,7 @@ function takeObject(idx) {
 *
 * # Inputs
 *
-* * `H` an array of 32 bytes, which should represent a valid
-*  `curve25519_dalek::ristretto::RistrettoPoint` chosen orthogonally to the
-*  `curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT`, a.k.a `G`,
-*  s.t. `log_G(H)` is intractible.
+* * `seed` an array of 32 bytes, which will be used to seed an RNG.
 *
 * # Returns
 *
@@ -107,16 +104,10 @@ function addHeapObject(obj) {
 *
 * # Returns
 *
-* A `signal_credential::issuer::SignalIssuer` as a `JsValue`¹.
+* An `aeonflux::amacs::Keypair` as a `JsValue`¹.
 *
 * ¹ Which, by the way, you won\'t be able to do much of anything with since
 *   it\'s internally serialised to literal bytes, so best don\'t touch it.
-*
-* # Note
-*
-* After calling this function, you probably **really** want to call
-* `issuer_get_keypair()` with the result, in order to retain the necessary
-* data for re-instantiating this credential issuer with `issuer_new()` later.
 *
 * @param {any} arg0
 * @param {Uint8Array} arg1
@@ -132,27 +123,6 @@ export function issuer_create(arg0, arg1) {
 
     }
 
-}
-
-/**
-* Get an instantiated credential issuer\'s aMACs keypair.
-*
-* # Inputs
-*
-* * `issuer` is a `SignalIssuer` as a `JsValue`.
-*
-* # Returns
-*
-* * An `aeonflux::amacs::Keypair` as a `JsValue`¹.
-*
-* ¹ Which, by the way, you won\'t be able to do much of anything with since
-*   it\'s internally serialised to literal bytes, so best don\'t touch it.
-*
-* @param {any} arg0
-* @returns {any}
-*/
-export function issuer_get_keypair(arg0) {
-    return takeObject(wasm.issuer_get_keypair(addHeapObject(arg0)));
 }
 
 /**
@@ -217,9 +187,10 @@ export function issuer_new(arg0, arg1) {
 * * `issuer` is a `SignalIssuer` as a `JsValue`.
 * * `seed` must be a byte array with length 32, containing random bytes for
 *   seeding a CSPRNG.
-* * `request` is a `SignalCredentialRequest` as a `JsValue`, from a `SignalUser`.
 * * `phone_number` is the `SignalUser`\'s phone number as bytes, e.g.
 *   `[1, 4, 1, 5, 5, 5, 5, 1, 2, 3, 4]`.
+* * `seed` must be a byte array with length 32, containing random
+*   bytes for seeding a CSPRNG.
 *
 * # Returns
 *
@@ -228,19 +199,18 @@ export function issuer_new(arg0, arg1) {
 *
 * @param {any} arg0
 * @param {Uint8Array} arg1
-* @param {any} arg2
-* @param {Uint8Array} arg3
+* @param {Uint8Array} arg2
 * @returns {any}
 */
-export function issuer_issue(arg0, arg1, arg2, arg3) {
+export function issuer_issue(arg0, arg1, arg2) {
     const [ptr1, len1] = passArray8ToWasm(arg1);
-    const [ptr3, len3] = passArray8ToWasm(arg3);
+    const [ptr2, len2] = passArray8ToWasm(arg2);
     try {
-        return takeObject(wasm.issuer_issue(addHeapObject(arg0), ptr1, len1, addHeapObject(arg2), ptr3, len3));
+        return takeObject(wasm.issuer_issue(addHeapObject(arg0), ptr1, len1, ptr2, len2));
 
     } finally {
         wasm.__wbindgen_free(ptr1, len1 * 1);
-        wasm.__wbindgen_free(ptr3, len3 * 1);
+        wasm.__wbindgen_free(ptr2, len2 * 1);
 
     }
 
@@ -275,123 +245,18 @@ export function issuer_verify(arg0, arg1) {
 * * `issuer` is a `SignalIssuer` as a `JsValue`.
 * * `verified_credential` is a `VerifiedSignalCredential` as a `JsValue`, as
 *   may be obtained via `issuer_verify()`.
-* * `roster` is a `GroupMembershipRoster` as a `JsValue`.
 *
 * # Returns
 *
-* `true` if the user is an owner in the group, `false` otherwise.
-* @param {any} arg0
-* @param {any} arg1
-* @param {any} arg2
-* @returns {boolean}
-*/
-export function issuer_verify_roster_membership_owner(arg0, arg1, arg2) {
-    return (wasm.issuer_verify_roster_membership_owner(addHeapObject(arg0), addHeapObject(arg1), addHeapObject(arg2))) !== 0;
-}
-
-/**
-* Check if a user is an admin in a Signal group.
-*
-* # Inputs
-*
-* * `issuer` is a `SignalIssuer` as a `JsValue`.
-* * `verified_credential` is a `VerifiedSignalCredential` as a `JsValue`, as
-*   may be obtained via `issuer_verify()`.
-* * `roster` is a `GroupMembershipRoster` as a `JsValue`.
-*
-* # Returns
-*
-* `true` if the user is an admin in the group, `false` otherwise.
-* @param {any} arg0
-* @param {any} arg1
-* @param {any} arg2
-* @returns {boolean}
-*/
-export function issuer_verify_roster_membership_admin(arg0, arg1, arg2) {
-    return (wasm.issuer_verify_roster_membership_admin(addHeapObject(arg0), addHeapObject(arg1), addHeapObject(arg2))) !== 0;
-}
-
-/**
-* Check if a user is a user-level member in a Signal group.
-*
-* # Inputs
-*
-* * `issuer` is a `SignalIssuer` as a `JsValue`.
-* * `verified_credential` is a `VerifiedSignalCredential` as a `JsValue`, as
-*   may be obtained via `issuer_verify()`.
-* * `roster` is a `GroupMembershipRoster` as a `JsValue`.
-*
-* # Returns
-*
-* `true` if the user is an user in the group, `false` otherwise.
-* @param {any} arg0
-* @param {any} arg1
-* @param {any} arg2
-* @returns {boolean}
-*/
-export function issuer_verify_roster_membership_user(arg0, arg1, arg2) {
-    return (wasm.issuer_verify_roster_membership_user(addHeapObject(arg0), addHeapObject(arg1), addHeapObject(arg2))) !== 0;
-}
-
-/**
-* Create a new `SignalUser`.
-*
-* # Inputs
-*
-* * `system_parameters` are a globally agreed upon set of
-*   `aeonflux::parameters::SystemParameters`, which may be obtained via
-*   `system_parameters_create()`.
-* * `keypair` is optionally an `aeonflux::elgamal::Keypair` as a `JsValue` if
-*   the credential issuer supports blinded issuance, otherwise it may be
-*   `JsValue::from(0)` in order to signify that the user has no keypair.
-* * `phone_number` is the `SignalUser`\'s phone number as bytes, e.g.
-*   `[1, 4, 1, 5, 5, 5, 5, 1, 2, 3, 4]`.
-* * `issuer_parameters` is an `aeonflux::amacs::PublicKey` as a `JsValue`,
-*   which can be obtained by calling `issuer_get_issuer_parameters()`.
-* * `seed` must be a byte array with length 32, containing random bytes for
-*   seeding a CSPRNG.
-*
-* # Returns
-*
-* A `SignalUser` as a `JsValue` if successful, otherwise a single byte set to `0`.
+* The roster entry commitment, if the user\'s credential has a committed value
+* which matches the value in the roster entry commitment, `false` otherwise.
 *
 * @param {any} arg0
 * @param {any} arg1
-* @param {Uint8Array} arg2
-* @param {any} arg3
-* @param {Uint8Array} arg4
 * @returns {any}
 */
-export function user_new(arg0, arg1, arg2, arg3, arg4) {
-    const [ptr2, len2] = passArray8ToWasm(arg2);
-    const [ptr4, len4] = passArray8ToWasm(arg4);
-    try {
-        return takeObject(wasm.user_new(addHeapObject(arg0), addHeapObject(arg1), ptr2, len2, addHeapObject(arg3), ptr4, len4));
-
-    } finally {
-        wasm.__wbindgen_free(ptr2, len2 * 1);
-        wasm.__wbindgen_free(ptr4, len4 * 1);
-
-    }
-
-}
-
-/**
-* Create a request for a new credential from the issuer.
-*
-* # Inputs
-*
-* * `user` a `SignalUser` as a `JsValue`.
-*
-* # Returns
-*
-* A `SignalCredentialRequest` as a `JsValue`.
-*
-* @param {any} arg0
-* @returns {any}
-*/
-export function user_obtain(arg0) {
-    return takeObject(wasm.user_obtain(addHeapObject(arg0)));
+export function issuer_verify_roster_membership(arg0, arg1) {
+    return takeObject(wasm.issuer_verify_roster_membership(addHeapObject(arg0), addHeapObject(arg1)));
 }
 
 /**
@@ -400,22 +265,37 @@ export function user_obtain(arg0) {
 *
 * # Inputs
 *
-* * `user` a `SignalUser` as a `JsValue`.
+* * `phone_number` is the `SignalUser`\'s phone number as bytes, e.g.
+*   `[1, 4, 1, 5, 5, 5, 5, 1, 2, 3, 4]`.
+* * `system_parameters` are a globally agreed upon set of
+*   `aeonflux::parameters::SystemParameters`, which may be obtained via
+*   `system_parameters_create()`.
+* * `issuer_parameters` is an `aeonflux::amacs::PublicKey` as a `JsValue`,
+*   which can be obtained by calling `issuer_get_issuer_parameters()`.
 * * `issuance` is a `SignalCredentialIssuance` as a `JsValue`, which is
 *   obtainable via `issuer_issue()`.
 *
 * # Returns
 *
-* The updated `SignalUser` as a `JsValue` if successful, otherwise a single
-* byte set to `0`.  (This new `SignalUser` should be used later, since it has
-* the ability to present its credential.)
+* The `SignalUser` as a `JsValue` if successful, otherwise a single byte set
+* to `0`.
 *
-* @param {any} arg0
+* @param {Uint8Array} arg0
 * @param {any} arg1
+* @param {any} arg2
+* @param {any} arg3
 * @returns {any}
 */
-export function user_obtain_finish(arg0, arg1) {
-    return takeObject(wasm.user_obtain_finish(addHeapObject(arg0), addHeapObject(arg1)));
+export function user_obtain_finish(arg0, arg1, arg2, arg3) {
+    const [ptr0, len0] = passArray8ToWasm(arg0);
+    try {
+        return takeObject(wasm.user_obtain_finish(ptr0, len0, addHeapObject(arg1), addHeapObject(arg2), addHeapObject(arg3)));
+
+    } finally {
+        wasm.__wbindgen_free(ptr0, len0 * 1);
+
+    }
+
 }
 
 /**
@@ -424,6 +304,8 @@ export function user_obtain_finish(arg0, arg1) {
 * # Inputs
 *
 * * `user` a `SignalUser` as a `JsValue`.
+* * `roster_entry_commitment` is a commitment to the user\'s phone number and
+*   an opening.
 * * `seed` must be a byte array with length 32, containing random bytes for
 *   seeding a CSPRNG.
 *
@@ -432,16 +314,17 @@ export function user_obtain_finish(arg0, arg1) {
 * A `SignalCredentialPresentation` as a `JsValue`.
 *
 * @param {any} arg0
-* @param {Uint8Array} arg1
+* @param {any} arg1
+* @param {Uint8Array} arg2
 * @returns {any}
 */
-export function user_show(arg0, arg1) {
-    const [ptr1, len1] = passArray8ToWasm(arg1);
+export function user_show(arg0, arg1, arg2) {
+    const [ptr2, len2] = passArray8ToWasm(arg2);
     try {
-        return takeObject(wasm.user_show(addHeapObject(arg0), ptr1, len1));
+        return takeObject(wasm.user_show(addHeapObject(arg0), addHeapObject(arg1), ptr2, len2));
 
     } finally {
-        wasm.__wbindgen_free(ptr1, len1 * 1);
+        wasm.__wbindgen_free(ptr2, len2 * 1);
 
     }
 
@@ -491,10 +374,6 @@ export function __wbindgen_json_serialize(idx, ptrptr) {
     const [ptr, len] = passStringToWasm(JSON.stringify(getObject(idx)));
     getUint32Memory()[ptrptr / 4] = ptr;
     return len;
-}
-
-export function __wbindgen_jsval_eq(a, b) {
-    return getObject(a) === getObject(b) ? 1 : 0;
 }
 
 export function __wbindgen_throw(ptr, len) {
