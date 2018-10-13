@@ -1,6 +1,6 @@
 
 clean-android:
-    -rm -rf .cargo
+	-rm -rf .cargo
 	-rm -rf NDK
 
 android:
