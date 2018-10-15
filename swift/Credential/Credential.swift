@@ -22,7 +22,7 @@ class SystemParameters {
     func create(seed: [UInt8]) -> Self? {
         guard seed.count == 32 else { return nil }
 
-        let buffer = system_parameters_create(H)
+        let buffer = system_parameters_create(seed)
 
         self.data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
             Array(UnsafeBufferPointer(start: $0, count: Int(buffer.len)))
@@ -65,7 +65,7 @@ class RosterEntryCommitment {
         }
     }
 
-    func open(phone_number: [UInt8], system_parameters: SystemParameters) {
+    func open(phone_number: [UInt8], system_parameters: SystemParameters) -> Bool {
         let buffer = roster_entry_commitment_open(&self.data,
                                                   UInt64(self.data.count),
                                                   phone_number,
@@ -122,20 +122,21 @@ class VerifiedCredential {
 }
 
 class SignalIssuer {
-    var keypair = AlgebraicMACKeypair
+    var keypair: AlgebraicMACKeypair
     var data = [UInt8](repeating: 0, count: Int(LENGTH_ISSUER))
 
     init?(withSeed seed: [UInt8], system_parameters: SystemParameters) {
         guard seed.count == 32 else { return nil }
 
-        let buffer = issuer_create(&system_parameters.data, UInt64(system_parameters.data.count), seed)
-        data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
-            Array(UnsafeBufferPointer(start: $0, count: Int(buffer.len)))
+        let keypair_buffer = issuer_create(&system_parameters.data,
+                                            UInt64(system_parameters.data.count), seed)
+        data = keypair_buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(keypair_buffer.len)) {
+            Array(UnsafeBufferPointer(start: $0, count: Int(keypair_buffer.len)))
         }
-        self.keypair = AlgebraicMACKeypair(withBytes: data)
+        self.keypair = AlgebraicMACKeypair(withBytes: data)!
 
         let buffer = issuer_new(&system_parameters.data, UInt64(system_parameters.data.count),
-                                &self.keypair, UInt64(self.keypair.count))
+                                &self.keypair.data, UInt64(self.keypair.data.count))
         self.data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
             Array(UnsafeBufferPointer(start: $0, count: Int(buffer.len)))
         }
@@ -147,6 +148,7 @@ class SignalIssuer {
         self.data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
             Array(UnsafeBufferPointer(start: $0, count: Int(buffer.len)))
         }
+        self.keypair = keypair
     }
 
     func get_parameters() -> IssuerParameters? {
@@ -159,9 +161,7 @@ class SignalIssuer {
         return issuer_parameters
     }
 
-    func issue(request: CredentialRequest,
-               phone_number: [UInt8],
-               seed: [UInt8]) -> CredentialIssuance? {
+    func issue(phone_number: [UInt8], seed: [UInt8]) -> CredentialIssuance? {
         guard seed.count == 32 else { return nil }
 
         let buffer = issuer_issue(&self.data, UInt64(self.data.count),
@@ -208,7 +208,7 @@ class User {
         guard seed.count == 32 else { return nil }
 
         let buffer = user_show(&self.data, UInt64(self.data.count),
-                               &roster_entry_commitment.data, UInt64(roster_entry_commitment.data.count) seed)
+                               &roster_entry_commitment.data, UInt64(roster_entry_commitment.data.count), seed)
         let data = buffer.ptr.withMemoryRebound(to: UInt8.self, capacity: Int(buffer.len)) {
             Array(UnsafeBufferPointer(start: $0, count: Int(buffer.len)))
         }
