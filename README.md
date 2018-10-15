@@ -39,3 +39,20 @@ Components:
 * Swift: A copy of the compiled Swift library is at `swift/Products/libCredential.a`.
 * Wasm/JS: A copy of the compiled Wasm is at
   `wasm/src/credential{_bg}.wasm` and its JS wrapper module is at `wasm/src/credential.js`.
+
+
+ TODO
+------
+
+* The podspec for the Swift CocoaPod (`credential.podspec`) isn't working,
+  however as noted above in the "Build Artefacts" section, the code does compile
+  in Xcode.  It might be that there is a build/linker setting somewhere in the
+  `.xcodeproj` settings that isn't replicated in the podspec.
+
+* The Android/Java AAR is just a repackaging into an AAR of the C API, compiled for
+  `arm64-v8a`, `armeabi-v7a`, and `x86` ABIs.  There is no JNI interface to the
+  C yet, as I wasn't sure whether Android clients and/or the server could just
+  directly call the C.
+
+* Unittests and benchmarks should be written in C, Java, Swift, and JS. (There
+  are currently only tests in Rust and C-like Rust).
