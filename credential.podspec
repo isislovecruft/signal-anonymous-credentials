@@ -8,25 +8,28 @@
 
 Pod::Spec.new do |s|
   s.name         = "credential"
-  s.version      = "0.0.1"
+  s.version      = "0.0.3"
   s.summary      = "A Swift FFI API for working with the Rust signal-credential crate."
   s.homepage     = "https://signal.org/"
   s.license      = "MIT (example)"
   s.license      = { :type => "BSD", :file => "LICENSE" }
   s.authors      = { "isis lovecruft" => "isis@patternsinthevoid.net" }
-
-  # ――― Source Location ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
-  #
-  #  Specify the location from where the source should be retrieved.
-  #  Supports git, hg, bzr, svn and HTTP.
-  #
-
   s.source = { :git => "https://github.com/signalapp/groupzk.git", :tag => "swift-credential-#{s.version}" }
-  s.source_files  = "swift/Credential/Credential.swift", "swift/Credential/**/*.{h,m,swift}", "swift/Credential/*credential*.{h,a}"
-  s.frameworks = "libresolv"
-  # s.preserve_paths = "FilesToSave", "MoreFilesToSave"
-  s.library   = "credential"
+  s.source_files  = "swift/Credential/**/*.{h,swift}", "swift/Credential/*credential*.{h,a}"
+
+  s.exclude_files = "aeonflux/**/*", "build-test/**/*", "java/**/*", "jni/**/*", "ffi/**/*", "signal-credential/**/*", "wasm/**/*", "zkp-expand/**/*"
+
+  s.ios.deployment_target = "8.0"
+  s.osx.deployment_target = "10.10"
+
+  s.ios.vendored_library = "swift/libcredential.a"
+  s.osx.vendored_library = "swift/libcredential.a"
+
+  s.private_header_files = "swift/Credential/credential.h"
+
+  # s.library   = "credential"
   # s.libraries = "iconv", "xml2"
+  s.libraries = "resolv"
 
   # ――― Project Settings ――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
   #
