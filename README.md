@@ -28,3 +28,14 @@ Components:
 * `zkp-expand`: A small utitily to expand and clean up the `*_macros.rs` files
   containing pseudo-Camenisch-Stadler notated non-interactive zero-knowledge
   proofs from `aeonflux` and `signal-credential`.
+
+
+ Build Artefacts
+-----------------
+
+* C/C++: A copy of the copiled C/C++ FFI is at `ffi/target/release/libcredential.{a,so}`.
+* C Headers: The headers are at `ffi/src/include/credential.h`.
+* Java/JNI: The compiled AAR is at `jni/Credential/rust/build/outputs/aar/rust-debug.aar`.
+* Swift: A copy of the compiled Swift library is at `swift/Products/libCredential.a`.
+* Wasm/JS: A copy of the compiled Wasm is at
+  `wasm/src/credential{_bg}.wasm` and its JS wrapper module is at `wasm/src/credential.js`.
