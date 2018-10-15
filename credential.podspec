@@ -22,7 +22,7 @@ Pod::Spec.new do |s|
   #
 
   s.source = { :git => "https://github.com/signalapp/groupzk.git", :tag => "swift-credential-#{s.version}" }
-  s.source_files  = "Credential/Credential.swift", "Credential/**/*.{h,m,swift}", "*credential*.{h,a}"
+  s.source_files  = "swift/Credential/Credential.swift", "swift/Credential/**/*.{h,m,swift}", "swift/Credential/*credential*.{h,a}"
   s.frameworks = "libresolv"
   # s.preserve_paths = "FilesToSave", "MoreFilesToSave"
   s.library   = "credential"
