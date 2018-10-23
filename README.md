@@ -56,3 +56,22 @@ Components:
 
 * Unittests and benchmarks should be written in C, Java, Swift, and JS. (There
   are currently only tests in Rust and C-like Rust).
+
+
+ Useful resources
+------------------
+
+Java/JNI:
+
+* https://www.codepool.biz/build-so-aar-android-studio.html
+* https://dominoc925.blogspot.com/2015/09/how-to-create-and-use-android-archive.html
+* https://github.com/tomaka/android-rs-glue
+* https://hub.docker.com/r/tomaka/cargo-apk/
+* https://github.com/signalapp/curve25519-java/blob/master/java/src/main/java/org/whispersystems/curve25519/NativeCurve25519Provider.java
+* https://github.com/signalapp/curve25519-java/blob/master/android/jni/curve25519-jni.c
+* https://docs.rs/jni/0.10.2/src/jni/wrapper/jnienv.rs.html#1063-1079
+* https://github.com/jni-rs/jni-rs/blob/master/example/mylib/src/lib.rs
+* https://docs.rs/jni/0.10.2/jni/
+* https://github.com/signalapp/ContactDiscoveryService/blob/41ea6e87fa5410aee1891e9a83c46afe8aaf58c5/service/src/main/java/org/whispersystems/contactdiscovery/util/NativeUtils.java
+
+
