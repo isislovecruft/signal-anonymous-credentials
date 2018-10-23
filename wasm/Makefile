@@ -6,4 +6,4 @@ wasm:
 	-cargo install wasm-bindgen-cli
 	cargo +nightly build --target wasm32-unknown-unknown --release
 	cp target/wasm32-unknown-unknown/release/credential.wasm src
-	wasm-bindgen src/credential.wasm --out-dir src
+	wasm-bindgen --no-modules src/credential.wasm --out-dir src
