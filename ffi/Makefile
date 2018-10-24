@@ -2,6 +2,7 @@
 clean-android:
 	-rm -rf .cargo
 	-rm -rf NDK
+	cargo clean
 
 android:
 	cargo build --features=u32_backend --target armv7-linux-androideabi --release
