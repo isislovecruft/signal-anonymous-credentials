@@ -79,8 +79,7 @@ macro_rules! csprng_from_seed {
     }}
 }
 
-/// Create some globally-agreed upon `SystemParameters` from a distinguished
-/// basepoint, `H`.
+/// Create some globally-agreed upon `SystemParameters` by seeding a CSPRNG.
 ///
 /// # Inputs
 ///
@@ -237,7 +236,7 @@ pub fn issuer_issue(
 ///
 /// # Returns
 ///
-/// If successfullly verified, returns a `VerifiedSignalCredential` as a
+/// If successfully verified, returns a `VerifiedSignalCredential` as a
 /// `JsValue`.  Otherwise, returns a single byte set to `0`.
 ///
 #[wasm_bindgen]
