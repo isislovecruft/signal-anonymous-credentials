@@ -246,6 +246,20 @@ pub extern "C" fn roster_entry_commitment_create(
 }
 
 #[no_mangle]
+pub extern "C" fn roster_entry_commitment_remove_opening(
+    roster_entry_commitment: *const uint8_t,
+    roster_entry_commitment_length: uint64_t,
+) -> buf_t
+{
+    let deserialized = deserialize_or_return!(RosterEntryCommitment,
+                                              roster_entry_commitment,
+                                              roster_entry_commitment_length);
+    let serialized = serialize_or_return!(deserialized.commitment);
+
+    slice_to_len_and_ptr!(&serialized[..])
+}
+
+#[no_mangle]
 pub extern "C" fn roster_entry_commitment_open(
     roster_entry_commitment: *const uint8_t, // also contains the opening
     roster_entry_commitment_length: uint64_t,

@@ -17,6 +17,7 @@ const uint LENGTH_CREDENTIAL_ISSUANCE = 328;
 const uint LENGTH_CREDENTIAL_PRESENTATION = 448;
 const uint LENGTH_VERIFIED_CREDENTIAL = 448;
 const uint LENGTH_ROSTER_ENTRY_COMMITMENT = 64;
+const uint LENGTH_ROSTER_ENTRY_COMMITMENT_SANS_OPENING = 32;
 
 /**
  * Contains a pointer to some data and a length.
@@ -344,7 +345,30 @@ buf_t roster_entry_commitment_create(const uint8_t* phone_number,
                                      const uint64_t system_parameters_length,
                                      const uint8_t* seed);
 
-// XXX We probably want a roster_entry_commitment_remove_opening()?
+/**
+ * Remove the opening from a roster entry, leaving just the commitment to the
+ * phone number, the latter of which can be put directly into a group roster.
+ *
+ * **Inputs**
+ *
+ * - `roster_entry_commitment` is a commitment to the user's phone number and an
+ *   opening, as can be obtained from `roster_entry_commitment_create()`.  This
+ *   commitment should have been stored at the appropriate permission level for
+ *   some Signal group roster at some point prior, whenever the user joined the
+ *   group.
+ * - `roster_entry_commitment_length` is the length of the
+ *   `roster_entry_commitment`, as can be obtained from
+ *   `roster_entry_commitment_create()`.
+ *
+ * **Returns**
+ *
+ * If successful, returns a `buf_t` containing the committed phone number
+ * (without the commitment's opening) as a pointer to
+ * `LENGTH_ROSTER_ENTRY_COMMITMENT_SANS_OPENING` bytes.  Otherwise, the `buf_t`
+ * will have a length of `0` and a NULL pointer.
+ */
+buf_t roster_entry_commitment_remove_opening(const uint8_t* roster_entry_commitment,
+                                             const uint64_t roster_entry_commitment_length);
 
 /**
  * Open a commitment, `roster_entry_commitment`, to a `phone_number`.
