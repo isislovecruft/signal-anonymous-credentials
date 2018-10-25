@@ -252,8 +252,8 @@ pub extern "C" fn roster_entry_commitment_remove_opening(
 ) -> buf_t
 {
     let deserialized = deserialize_or_return!(RosterEntryCommitment,
-                                              roster_entry_commitment,
-                                              roster_entry_commitment_length);
+                                              roster_entry_commitment_length,
+                                              roster_entry_commitment);
     let serialized = serialize_or_return!(deserialized.commitment);
 
     slice_to_len_and_ptr!(&serialized[..])
