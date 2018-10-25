@@ -24,14 +24,15 @@ android:
 clean-ios:
 	cargo clean
 
+override platform=$(shell uname -s)
+
 ios:
-	ifneq ($(platform),Darwin)
+ifneq ($(platform),Darwin)
 	$(error WARNING: Running `make ios` only works on MacOS machines)
-	endif
-	ifndef SIGNAL_CREDENTIAL_IOS_DIR
+endif
+ifndef SIGNAL_CREDENTIAL_IOS_DIR
 	$(error Please set the SIGNAL_CREDENTIAL_IOS_DIR environment variable to the output directory for compiled library and header files, e.g. .../signal-credential-swift/Credential/libcredential)
-	endif
-	platform=:$(shell uname)
+endif
 	cargo lipo --release --features=u64_backend
 	cp target/universal/release/libcredential.a $(SIGNAL_CREDENTIAL_IOS_DIR)/libcredential-ios.a
-	cp src/ffi/include/credential.h $(SIGNAL_CREDENTIAL_IOS_DIR)
+	cp src/include/credential.h $(SIGNAL_CREDENTIAL_IOS_DIR)
