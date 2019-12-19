@@ -250,3 +250,19 @@ impl User {
         })
     }
 }
+
+impl User {
+    pub fn blind_request<C>(
+        &mut self,
+        csprng: &mut C,
+    ) -> CredentialBlindRequest
+    where
+        C: CryptoRng + RngCore,
+    {
+        if self.key.is_none() {
+            self.key = elgamal::Keypair::generate::<C>(&mut csprng);
+        }
+
+        unimplemented!();
+    }
+}
